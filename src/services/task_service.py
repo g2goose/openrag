@@ -18,6 +18,7 @@ logger = get_logger(__name__)
 
 class IngestionTimeoutError(Exception):
     """Raised when file processing exceeds the configured timeout"""
+
     pass
 
 
@@ -25,7 +26,9 @@ class TaskService:
     # Cleanup interval in seconds (2 hours)
     CLEANUP_INTERVAL_SECONDS = 2 * 60 * 60
 
-    def __init__(self, document_service=None, process_pool=None, ingestion_timeout=3600):
+    def __init__(
+        self, document_service=None, process_pool=None, ingestion_timeout=3600
+    ):
         self.document_service = document_service
         self.process_pool = process_pool
         self.task_store: dict[
@@ -103,7 +106,9 @@ class TaskService:
         try:
             return await asyncio.wait_for(coro, timeout=timeout)
         except asyncio.TimeoutError:
-            raise IngestionTimeoutError(f"File processing timed out after {timeout} seconds.") from None
+            raise IngestionTimeoutError(
+                f"File processing timed out after {timeout} seconds."
+            ) from None
 
     async def create_upload_task(
         self,
@@ -159,18 +164,29 @@ class TaskService:
             delete_after_ingest=delete_after_ingest,
             replace_duplicates=replace_duplicates,
         )
-        return await self.create_custom_task(user_id, file_paths, processor, original_filenames)
+        return await self.create_custom_task(
+            user_id, file_paths, processor, original_filenames
+        )
 
-    async def create_custom_task(self, user_id: str, items: list, processor, original_filenames: dict | None = None) -> str:
+    async def create_custom_task(
+        self,
+        user_id: str,
+        items: list,
+        processor,
+        original_filenames: dict | None = None,
+    ) -> str:
         """Create a new task with custom processor for any type of items"""
         import os
+
         # Store anonymous tasks under a stable key so they can be retrieved later
         store_user_id = user_id or AnonymousUser().user_id
         task_id = str(uuid.uuid4())
 
         # Create file tasks with original filenames if provided
         normalized_originals = (
-            {str(k): v for k, v in original_filenames.items()} if original_filenames else {}
+            {str(k): v for k, v in original_filenames.items()}
+            if original_filenames
+            else {}
         )
         file_tasks = {
             str(item): FileTask(
@@ -213,7 +229,7 @@ class TaskService:
                 metadata={
                     "total_files": len(items),
                     "processor_type": processor.__class__.__name__,
-                }
+                },
             )
         )
 
@@ -295,7 +311,7 @@ class TaskService:
                         # Add timeout protection to prevent indefinite hangs
                         await self._process_with_timeout(
                             processor.process_item(upload_task, item, file_task),
-                            timeout_seconds=self.ingestion_timeout
+                            timeout_seconds=self.ingestion_timeout,
                         )
 
                         logger.info(
@@ -364,7 +380,10 @@ class TaskService:
                         file_task.updated_at = time.time()
                         # Only increment processed_files if the file reached a terminal state
                         # This prevents counter inconsistency on cancellation
-                        if file_task.status in [TaskStatus.COMPLETED, TaskStatus.FAILED]:
+                        if file_task.status in [
+                            TaskStatus.COMPLETED,
+                            TaskStatus.FAILED,
+                        ]:
                             async with self._get_task_lock(task_id):
                                 upload_task.processed_files += 1
                         upload_task.updated_at = time.time()
@@ -409,7 +428,7 @@ class TaskService:
                         "total_files": upload_task.total_files,
                         "successful_files": upload_task.successful_files,
                         "failed_files": upload_task.failed_files,
-                    }
+                    },
                 )
             )
 
@@ -476,7 +495,7 @@ class TaskService:
                             "processed_files": upload_task.processed_files,
                             "successful_files": upload_task.successful_files,
                             "failed_files": upload_task.failed_files,
-                        }
+                        },
                     )
                 )
             else:
@@ -631,8 +650,10 @@ class TaskService:
             for task_id in list(self.task_store[user_id].keys()):
                 task = self.task_store[user_id][task_id]
                 # Only cleanup completed or failed tasks that are old enough
-                if (task.status in [TaskStatus.COMPLETED, TaskStatus.FAILED] and
-                    current_time - task.updated_at > max_age_seconds):
+                if (
+                    task.status in [TaskStatus.COMPLETED, TaskStatus.FAILED]
+                    and current_time - task.updated_at > max_age_seconds
+                ):
                     del self.task_store[user_id][task_id]
                     # Clean up the associated lock
                     self._task_locks.pop(task_id, None)
@@ -641,7 +662,7 @@ class TaskService:
                         "Cleaned up old task",
                         task_id=task_id,
                         user_id=user_id,
-                        age_seconds=current_time - task.updated_at
+                        age_seconds=current_time - task.updated_at,
                     )
 
             # Remove empty user entries
@@ -720,7 +741,10 @@ class TaskService:
         3. Waiting for cancellation to complete
         4. Shutting down the process pool
         """
-        logger.info("Shutting down TaskService", background_tasks_count=len(self.background_tasks))
+        logger.info(
+            "Shutting down TaskService",
+            background_tasks_count=len(self.background_tasks),
+        )
 
         # Cancel the periodic cleanup task
         if self._cleanup_task is not None and not self._cleanup_task.done():
@@ -737,11 +761,18 @@ class TaskService:
 
         # Wait for all tasks to complete cancellation
         if self.background_tasks:
-            results = await asyncio.gather(*self.background_tasks, return_exceptions=True)
+            results = await asyncio.gather(
+                *self.background_tasks, return_exceptions=True
+            )
             # Log any unexpected errors (not CancelledError)
             for i, result in enumerate(results):
-                if isinstance(result, Exception) and not isinstance(result, asyncio.CancelledError):
-                    logger.warning("Background task raised exception during shutdown", error=str(result))
+                if isinstance(result, Exception) and not isinstance(
+                    result, asyncio.CancelledError
+                ):
+                    logger.warning(
+                        "Background task raised exception during shutdown",
+                        error=str(result),
+                    )
 
         # Shutdown the process pool
         if hasattr(self, "process_pool"):

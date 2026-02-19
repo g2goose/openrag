@@ -44,6 +44,7 @@ async def get_openai_models(request, models_service, session_manager):
             {"error": f"Failed to retrieve OpenAI models: {str(e)}"}, status_code=500
         )
 
+
 async def get_anthropic_models(request, models_service, session_manager):
     """Get available Anthropic models"""
     try:

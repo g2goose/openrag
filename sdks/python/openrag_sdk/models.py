@@ -278,3 +278,25 @@ class DeleteKnowledgeFilterResponse(BaseModel):
 
     success: bool
     error: str | None = None
+
+
+# Flow models
+class FlowSummary(BaseModel):
+    """Summary of an available Langflow flow."""
+
+    id: str
+    name: str
+    description: str = ""
+
+
+class FlowListResponse(BaseModel):
+    """Response from listing available flows."""
+
+    flows: list[FlowSummary] = Field(default_factory=list)
+
+
+class FlowRunResponse(BaseModel):
+    """Response from executing a flow."""
+
+    response: str
+    flow_id: str = ""

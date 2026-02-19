@@ -20,7 +20,9 @@ async def search(request: Request, search_service, session_manager):
         )  # Optional score threshold, defaults to 0
 
         user = request.state.user
-        jwt_token = session_manager.get_effective_jwt_token(user.user_id, request.state.jwt_token)
+        jwt_token = session_manager.get_effective_jwt_token(
+            user.user_id, request.state.jwt_token
+        )
 
         logger.debug(
             "Search API request",

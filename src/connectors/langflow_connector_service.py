@@ -65,9 +65,11 @@ class LangflowConnectorService:
             # Step 1: Upload file to Langflow
             logger.debug("Uploading file to Langflow", filename=document.filename)
             content = document.content
-            
+
             # Clean filename and ensure we don't add a double extension
-            processed_filename = clean_connector_filename(document.filename, document.mimetype)
+            processed_filename = clean_connector_filename(
+                document.filename, document.mimetype
+            )
 
             file_tuple = (
                 processed_filename,
@@ -80,13 +82,26 @@ class LangflowConnectorService:
             if self.session_manager:
                 try:
                     from config.settings import get_index_name
-                    opensearch_client = self.session_manager.get_user_opensearch_client(owner_user_id, jwt_token)
+
+                    opensearch_client = self.session_manager.get_user_opensearch_client(
+                        owner_user_id, jwt_token
+                    )
                     delete_body = {"query": {"term": {"filename": processed_filename}}}
-                    delete_result = await opensearch_client.delete_by_query(index=get_index_name(), body=delete_body)
+                    delete_result = await opensearch_client.delete_by_query(
+                        index=get_index_name(), body=delete_body
+                    )
                     deleted_count = delete_result.get("deleted", 0)
-                    logger.info("Deleted existing chunks before re-ingestion", filename=processed_filename, deleted_count=deleted_count)
+                    logger.info(
+                        "Deleted existing chunks before re-ingestion",
+                        filename=processed_filename,
+                        deleted_count=deleted_count,
+                    )
                 except Exception as delete_err:
-                    logger.warning("Failed to delete existing chunks before re-ingestion", filename=processed_filename, error=str(delete_err))
+                    logger.warning(
+                        "Failed to delete existing chunks before re-ingestion",
+                        filename=processed_filename,
+                        error=str(delete_err),
+                    )
 
             langflow_file_id = None  # Initialize to track if upload succeeded
             try:
@@ -175,7 +190,6 @@ class LangflowConnectorService:
                         )
                 raise
 
-
     async def sync_connector_files(
         self,
         connection_id: str,
@@ -259,7 +273,8 @@ class LangflowConnectorService:
         file_ids = [file_info["id"] for file_info in files_to_process]
         original_filenames = {
             file_info["id"]: clean_connector_filename(
-                file_info["name"], file_info.get("mimeType") or file_info.get("mimetype")
+                file_info["name"],
+                file_info.get("mimeType") or file_info.get("mimetype"),
             )
             for file_info in files_to_process
             if "name" in file_info
@@ -283,7 +298,7 @@ class LangflowConnectorService:
         """
         Sync specific files by their IDs using Langflow processing.
         Automatically expands folders to their contents.
-        
+
         Args:
             connection_id: The connection ID
             user_id: The user ID
@@ -316,9 +331,11 @@ class LangflowConnectorService:
 
         # If file_infos provided, cache them in the connector for later use
         # This allows get_file_content to use download URLs directly
-        if file_infos and hasattr(connector, 'set_file_infos'):
+        if file_infos and hasattr(connector, "set_file_infos"):
             connector.set_file_infos(file_infos)
-            logger.info(f"Cached {len(file_infos)} file infos with download URLs in connector")
+            logger.info(
+                f"Cached {len(file_infos)} file infos with download URLs in connector"
+            )
 
         # Temporarily set file_ids in the connector's config so list_files() can use them
         # Store the original values to restore later
@@ -331,7 +348,7 @@ class LangflowConnectorService:
             original_folder_ids = getattr(cfg, "folder_ids", None)
 
         expanded_file_ids = file_ids  # Default to original IDs
-        
+
         try:
             # Set the file_ids we want to sync in the connector's config
             if cfg is not None:

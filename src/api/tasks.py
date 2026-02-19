@@ -29,10 +29,14 @@ async def cancel_task(request: Request, task_service, session_manager):
 
     success = await task_service.cancel_task(user.user_id, task_id)
     if not success:
-        await TelemetryClient.send_event(Category.TASK_OPERATIONS, MessageId.ORB_TASK_CANCEL_FAILED)
+        await TelemetryClient.send_event(
+            Category.TASK_OPERATIONS, MessageId.ORB_TASK_CANCEL_FAILED
+        )
         return JSONResponse(
             {"error": "Task not found or cannot be cancelled"}, status_code=400
         )
 
-    await TelemetryClient.send_event(Category.TASK_OPERATIONS, MessageId.ORB_TASK_CANCELLED)
+    await TelemetryClient.send_event(
+        Category.TASK_OPERATIONS, MessageId.ORB_TASK_CANCELLED
+    )
     return JSONResponse({"status": "cancelled", "task_id": task_id})

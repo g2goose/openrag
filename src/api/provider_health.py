@@ -13,13 +13,13 @@ logger = get_logger(__name__)
 async def check_provider_health(request):
     """
     Check if the configured provider is healthy and properly validated.
-    
+
     Query parameters:
         provider (optional): Provider to check ('openai', 'ollama', 'watsonx', 'anthropic').
                            If not provided, checks the currently configured provider.
         test_completion (optional): If 'true', performs full validation with completion/embedding tests (consumes credits).
                                     If 'false' or not provided, performs lightweight validation (no/minimal credits consumed).
-    
+
     Returns:
         200: Provider is healthy and validated
         400: Invalid provider specified
@@ -30,10 +30,10 @@ async def check_provider_health(request):
         query_params = dict(request.query_params)
         check_provider = query_params.get("provider")
         test_completion = query_params.get("test_completion", "false").lower() == "true"
-        
+
         # Get current config
         current_config = get_openrag_config()
-        
+
         # Determine which provider to check
         if check_provider:
             provider = check_provider.lower()
@@ -63,8 +63,16 @@ async def check_provider_health(request):
                 project_id = getattr(provider_config, "project_id", None)
 
                 # Check if this provider is used for LLM or embedding
-                llm_model = current_config.agent.llm_model if provider == current_config.agent.llm_provider else None
-                embedding_model = current_config.knowledge.embedding_model if provider == current_config.knowledge.embedding_provider else None
+                llm_model = (
+                    current_config.agent.llm_model
+                    if provider == current_config.agent.llm_provider
+                    else None
+                )
+                embedding_model = (
+                    current_config.knowledge.embedding_model
+                    if provider == current_config.knowledge.embedding_provider
+                    else None
+                )
             except ValueError:
                 # Provider not found in configuration
                 return JSONResponse(
@@ -89,11 +97,13 @@ async def check_provider_health(request):
 
             embedding_api_key = getattr(embedding_provider_config, "api_key", None)
             embedding_endpoint = getattr(embedding_provider_config, "endpoint", None)
-            embedding_project_id = getattr(embedding_provider_config, "project_id", None)
+            embedding_project_id = getattr(
+                embedding_provider_config, "project_id", None
+            )
             embedding_model = current_config.knowledge.embedding_model
-        
+
         logger.info(f"Checking health for provider: {provider}")
-        
+
         # Validate provider setup
         if check_provider:
             # Validate specific provider
@@ -115,7 +125,9 @@ async def check_provider_health(request):
                     "details": {
                         "llm_model": llm_model,
                         "embedding_model": embedding_model,
-                        "endpoint": endpoint if provider in ["ollama", "watsonx"] else None,
+                        "endpoint": endpoint
+                        if provider in ["ollama", "watsonx"]
+                        else None,
                     },
                 },
                 status_code=200,
@@ -144,10 +156,14 @@ async def check_provider_health(request):
                     logger.info(f"LLM provider ({provider}) appears busy: {str(e)}")
                 else:
                     llm_error = str(e)
-                    logger.error(f"LLM provider ({provider}) validation timed out: {llm_error}")
+                    logger.error(
+                        f"LLM provider ({provider}) validation timed out: {llm_error}"
+                    )
             except Exception as e:
                 llm_error = str(e)
-                logger.error(f"LLM provider ({provider}) validation failed: {llm_error}")
+                logger.error(
+                    f"LLM provider ({provider}) validation failed: {llm_error}"
+                )
 
             # Validate embedding provider
             # For WatsonX with test_completion=True, wait 2 seconds between completion and embedding tests
@@ -157,9 +173,11 @@ async def check_provider_health(request):
                 and embedding_provider == "watsonx"
                 and llm_error is None
             ):
-                logger.info("Waiting 2 seconds before WatsonX embedding test (after completion test)")
+                logger.info(
+                    "Waiting 2 seconds before WatsonX embedding test (after completion test)"
+                )
                 await asyncio.sleep(2)
-            
+
             try:
                 await validate_provider_setup(
                     provider=embedding_provider,
@@ -173,13 +191,19 @@ async def check_provider_health(request):
                 # Timeout means provider is busy, not misconfigured
                 if embedding_provider == "ollama":
                     embedding_error = None  # Don't treat as error
-                    logger.info(f"Embedding provider ({embedding_provider}) appears busy: {str(e)}")
+                    logger.info(
+                        f"Embedding provider ({embedding_provider}) appears busy: {str(e)}"
+                    )
                 else:
                     embedding_error = str(e)
-                    logger.error(f"Embedding provider ({embedding_provider}) validation timed out: {embedding_error}")
+                    logger.error(
+                        f"Embedding provider ({embedding_provider}) validation timed out: {embedding_error}"
+                    )
             except Exception as e:
                 embedding_error = str(e)
-                logger.error(f"Embedding provider ({embedding_provider}) validation failed: {embedding_error}")
+                logger.error(
+                    f"Embedding provider ({embedding_provider}) validation failed: {embedding_error}"
+                )
 
             # Return combined status
             if llm_error or embedding_error:
@@ -187,7 +211,9 @@ async def check_provider_health(request):
                 if llm_error:
                     errors.append(f"LLM ({provider}): {llm_error}")
                 if embedding_error:
-                    errors.append(f"Embedding ({embedding_provider}): {embedding_error}")
+                    errors.append(
+                        f"Embedding ({embedding_provider}): {embedding_error}"
+                    )
 
                 return JSONResponse(
                     {
@@ -214,11 +240,11 @@ async def check_provider_health(request):
                 },
                 status_code=200,
             )
-        
+
     except Exception as e:
         error_message = str(e)
         logger.error(f"Provider health check failed for {provider}: {error_message}")
-        
+
         return JSONResponse(
             {
                 "status": "unhealthy",
@@ -227,4 +253,3 @@ async def check_provider_health(request):
             },
             status_code=503,
         )
-

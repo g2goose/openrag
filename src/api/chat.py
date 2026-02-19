@@ -19,7 +19,9 @@ async def chat_endpoint(request: Request, chat_service, session_manager):
     user = request.state.user
     user_id = user.user_id
 
-    jwt_token = session_manager.get_effective_jwt_token(user_id, request.state.jwt_token)
+    jwt_token = session_manager.get_effective_jwt_token(
+        user_id, request.state.jwt_token
+    )
 
     if not prompt:
         return JSONResponse({"error": "Prompt is required"}, status_code=400)
@@ -79,7 +81,9 @@ async def langflow_endpoint(request: Request, chat_service, session_manager):
     user = request.state.user
     user_id = user.user_id
 
-    jwt_token = session_manager.get_effective_jwt_token(user_id, request.state.jwt_token)
+    jwt_token = session_manager.get_effective_jwt_token(
+        user_id, request.state.jwt_token
+    )
 
     if not prompt:
         return JSONResponse({"error": "Prompt is required"}, status_code=400)
@@ -178,7 +182,7 @@ async def delete_session_endpoint(request: Request, chat_service, session_manage
         else:
             return JSONResponse(
                 {"error": result.get("error", "Failed to delete session")},
-                status_code=500
+                status_code=500,
             )
     except Exception as e:
         logger.error(f"Error deleting session: {e}")

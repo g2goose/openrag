@@ -4,6 +4,7 @@ API Key management endpoints.
 These endpoints use JWT cookie authentication (for the UI) and allow users
 to create, list, and revoke their API keys for use with the public API.
 """
+
 import json
 
 from starlette.requests import Request

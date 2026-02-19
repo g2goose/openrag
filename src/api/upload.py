@@ -11,7 +11,9 @@ async def upload(request: Request, document_service, session_manager):
         form = await request.form()
         upload_file = form["file"]
         user = request.state.user
-        jwt_token = session_manager.get_effective_jwt_token(user.user_id, request.state.jwt_token)
+        jwt_token = session_manager.get_effective_jwt_token(
+            user.user_id, request.state.jwt_token
+        )
 
         from config.settings import is_no_auth_mode
 
@@ -60,7 +62,9 @@ async def upload_path(request: Request, task_service, session_manager):
         return JSONResponse({"error": "No files found in directory"}, status_code=400)
 
     user = request.state.user
-    jwt_token = session_manager.get_effective_jwt_token(user.user_id, request.state.jwt_token)
+    jwt_token = session_manager.get_effective_jwt_token(
+        user.user_id, request.state.jwt_token
+    )
 
     from config.settings import is_no_auth_mode
 
@@ -99,12 +103,14 @@ async def upload_context(
     # Get optional parameters
     previous_response_id = form.get("previous_response_id")
     endpoint = form.get("endpoint", "langflow")
-    
+
     # Get user info from request state (set by auth middleware)
     user = request.state.user
     user_id = user.user_id if user else None
 
-    jwt_token = session_manager.get_effective_jwt_token(user_id, request.state.jwt_token)
+    jwt_token = session_manager.get_effective_jwt_token(
+        user_id, request.state.jwt_token
+    )
     # Process document and extract content
     doc_result = await document_service.process_upload_context(upload_file, filename)
 
@@ -136,6 +142,7 @@ async def upload_options(request: Request, session_manager):
         os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY")
     )
     from config.settings import UPLOAD_BATCH_SIZE
+
     return JSONResponse({"aws": aws_enabled, "upload_batch_size": UPLOAD_BATCH_SIZE})
 
 
@@ -168,7 +175,9 @@ async def upload_bucket(request: Request, task_service, session_manager):
         return JSONResponse({"error": "No files found in bucket"}, status_code=400)
 
     user = request.state.user
-    jwt_token = session_manager.get_effective_jwt_token(user.user_id, request.state.jwt_token)
+    jwt_token = session_manager.get_effective_jwt_token(
+        user.user_id, request.state.jwt_token
+    )
 
     from models.processors import S3FileProcessor
     from config.settings import is_no_auth_mode

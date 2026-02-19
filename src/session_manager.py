@@ -15,6 +15,8 @@ logger = get_logger(__name__)
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
+
 @dataclass
 class User:
     """User information from OAuth provider"""
@@ -33,6 +35,7 @@ class User:
         if self.last_login is None:
             self.last_login = datetime.now()
 
+
 class AnonymousUser(User):
     """Anonymous user"""
 
@@ -44,7 +47,6 @@ class AnonymousUser(User):
             picture=None,
             provider="none",
         )
-
 
 
 class SessionManager:
@@ -74,7 +76,9 @@ class SessionManager:
 
         if signing_key:
             if signing_key.lstrip().startswith("-----BEGIN"):
-                key = serialization.load_pem_private_key(signing_key.encode(), password=None)
+                key = serialization.load_pem_private_key(
+                    signing_key.encode(), password=None
+                )
 
                 self.private_key = key
                 self.public_key = key.public_key()
@@ -95,7 +99,9 @@ class SessionManager:
                         self.algorithm = "ES512"
                     else:
                         raise ValueError(f"Unsupported EC curve: {curve.name}")
-                elif isinstance(key, (ed25519.Ed25519PrivateKey, ed448.Ed448PrivateKey)):
+                elif isinstance(
+                    key, (ed25519.Ed25519PrivateKey, ed448.Ed448PrivateKey)
+                ):
                     self.algorithm = "EdDSA"
                 else:
                     raise ValueError(f"Unsupported private key type: {type(key)}")
@@ -111,7 +117,6 @@ class SessionManager:
             self._load_rsa_keys()
             self.algorithm = "RS256"
         logger.info(f"Initialized JWT signing with {self.algorithm}")
-
 
     def _load_rsa_keys(self):
         """Load RSA private and public keys from files"""
@@ -215,7 +220,9 @@ class SessionManager:
         token = os.getenv("OPENSEARCH_JWT_TOKEN")
         if not token:
             # If no env token, generate using JWT
-            token = jwt.encode(token_payload, self.private_key, algorithm=self.algorithm)
+            token = jwt.encode(
+                token_payload, self.private_key, algorithm=self.algorithm
+            )
         return token
 
     def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
@@ -271,7 +278,9 @@ class SessionManager:
         )
 
         # In no-auth mode, create anonymous JWT if needed
-        if jwt_token is None and (is_no_auth_mode() or user_id in (None, AnonymousUser().user_id)):
+        if jwt_token is None and (
+            is_no_auth_mode() or user_id in (None, AnonymousUser().user_id)
+        ):
             if not hasattr(self, "_anonymous_jwt"):
                 # Create anonymous JWT token for OpenSearch OIDC
                 logger.debug("Creating anonymous JWT")

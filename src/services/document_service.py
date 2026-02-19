@@ -99,7 +99,9 @@ class DocumentService:
         """Recreate the process pool if it's broken"""
         if self._process_pool_broken and self.process_pool:
             logger.warning("Attempting to recreate broken process pool")
-            TelemetryClient.send_event_sync(Category.DOCUMENT_PROCESSING, MessageId.ORB_DOC_POOL_RECREATE)
+            TelemetryClient.send_event_sync(
+                Category.DOCUMENT_PROCESSING, MessageId.ORB_DOC_POOL_RECREATE
+            )
             try:
                 # Shutdown the old pool
                 self.process_pool.shutdown(wait=False)
@@ -116,7 +118,6 @@ class DocumentService:
                 logger.error("Failed to recreate process pool", error=str(e))
                 return False
         return False
-
 
     async def process_upload_file(
         self,
@@ -138,7 +139,7 @@ class DocumentService:
         with auto_cleanup_tempfile(suffix=suffix) as tmp_path:
             # Stream upload file to temporary file
             file_size = 0
-            with open(tmp_path, 'wb') as tmp_file:
+            with open(tmp_path, "wb") as tmp_file:
                 while True:
                     chunk = await upload_file.read(1 << 20)
                     if not chunk:
@@ -153,7 +154,9 @@ class DocumentService:
             )
 
             try:
-                exists = await opensearch_client.exists(index=get_index_name(), id=file_hash)
+                exists = await opensearch_client.exists(
+                    index=get_index_name(), id=file_hash
+                )
             except Exception as e:
                 logger.error(
                     "OpenSearch exists check failed", file_hash=file_hash, error=str(e)
@@ -164,6 +167,7 @@ class DocumentService:
 
             # Use consolidated standard processing
             from models.processors import TaskProcessor
+
             processor = TaskProcessor(document_service=self)
             result = await processor.process_document_standard(
                 file_path=tmp_path,
@@ -197,11 +201,11 @@ class DocumentService:
 
         # Check if this is a .txt file - use simple processing
         file_ext = os.path.splitext(filename)[1].lower()
-        
-        if file_ext == '.txt':
+
+        if file_ext == ".txt":
             # Simple text file processing for chat context
-            text_content = content.read().decode('utf-8', errors='replace')
-            
+            text_content = content.read().decode("utf-8", errors="replace")
+
             # For context, we don't need to chunk - just return the full content
             return {
                 "filename": filename,

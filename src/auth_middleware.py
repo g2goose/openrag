@@ -33,6 +33,7 @@ def require_auth(session_manager):
                 from datetime import datetime
 
                 from session_manager import AnonymousUser
+
                 request.state.user = AnonymousUser()
                 request.state.jwt_token = None  # No JWT in no-auth mode
                 return await handler(request)
@@ -67,6 +68,7 @@ def optional_auth(session_manager):
                 from datetime import datetime
 
                 from session_manager import AnonymousUser
+
                 request.state.user = AnonymousUser()
                 request.state.jwt_token = None  # No JWT in no-auth mode
             else:

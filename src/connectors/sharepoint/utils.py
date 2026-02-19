@@ -29,4 +29,3 @@ def is_valid_sharepoint_url(url: str) -> bool:
     except (ValueError, AttributeError):
         # Invalid URL or parsing error
         return False
-

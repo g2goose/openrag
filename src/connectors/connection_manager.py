@@ -97,57 +97,63 @@ class ConnectionManager:
 
     async def cleanup_duplicate_connections(self, remove_duplicates=False):
         """
-        Clean up duplicate connections, keeping only the most recent connection 
+        Clean up duplicate connections, keeping only the most recent connection
         per provider per user
-        
+
         Args:
             remove_duplicates: If True, physically removes duplicates from connections.json
                             If False (default), just deactivates them
         """
         logger.info("Starting cleanup of duplicate connections")
-        
+
         # Group connections by (connector_type, user_id)
         grouped_connections = {}
-        
+
         for connection_id, connection in self.connections.items():
             if not connection.is_active:
                 continue  # Skip inactive connections
-                
+
             key = (connection.connector_type, connection.user_id)
-            
+
             if key not in grouped_connections:
                 grouped_connections[key] = []
-            
+
             grouped_connections[key].append((connection_id, connection))
-        
+
         # For each group, keep only the most recent connection
         connections_to_remove = []
-        
+
         for (connector_type, user_id), connections in grouped_connections.items():
             if len(connections) <= 1:
                 continue  # No duplicates
-                
-            logger.info(f"Found {len(connections)} duplicate connections for {connector_type}, user {user_id}")
-            
+
+            logger.info(
+                f"Found {len(connections)} duplicate connections for {connector_type}, user {user_id}"
+            )
+
             # Sort by created_at, keep the most recent
             connections.sort(key=lambda x: x[1].created_at, reverse=True)
-            
+
             # Keep the first (most recent), remove/deactivate the rest
             for connection_id, connection in connections[1:]:
                 connections_to_remove.append((connection_id, connection))
-                logger.info(f"Marking connection {connection_id} for {'removal' if remove_duplicates else 'deactivation'}")
-        
+                logger.info(
+                    f"Marking connection {connection_id} for {'removal' if remove_duplicates else 'deactivation'}"
+                )
+
         # Remove or deactivate duplicate connections
         for connection_id, connection in connections_to_remove:
             if remove_duplicates:
                 await self.delete_connection(connection_id)  # Handles token cleanup
             else:
                 await self.deactivate_connection(connection_id)
-        
+
         action = "Removed" if remove_duplicates else "Deactivated"
-        logger.info(f"Cleanup complete. {action} {len(connections_to_remove)} duplicate connections")
+        logger.info(
+            f"Cleanup complete. {action} {len(connections_to_remove)} duplicate connections"
+        )
         return len(connections_to_remove)
-    
+
     async def update_connection(
         self,
         connection_id: str,
@@ -197,10 +203,12 @@ class ConnectionManager:
         user_id: Optional[str] = None,
     ) -> str:
         """Create a new connection configuration, ensuring only one per provider per user"""
-        
+
         # Check if we already have an active connection for this provider and user
-        existing_connection = await self._get_existing_connection(connector_type, user_id)
-        
+        existing_connection = await self._get_existing_connection(
+            connector_type, user_id
+        )
+
         if existing_connection:
             # Check if the existing connection has a valid token
             try:
@@ -208,26 +216,25 @@ class ConnectionManager:
                 if await connector.authenticate():
                     logger.info(
                         f"Using existing valid connection for {connector_type}",
-                        connection_id=existing_connection.connection_id
+                        connection_id=existing_connection.connection_id,
                     )
                     # Update the existing connection with new config if needed
                     if config != existing_connection.config:
                         logger.info("Updating existing connection config")
                         await self.update_connection(
-                            existing_connection.connection_id,
-                            config=config
+                            existing_connection.connection_id, config=config
                         )
                     return existing_connection.connection_id
             except Exception as e:
                 logger.warning(
                     f"Existing connection authentication failed: {e}",
-                    connection_id=existing_connection.connection_id
+                    connection_id=existing_connection.connection_id,
                 )
                 # If authentication fails, we'll create a new connection and clean up the old one
-        
+
         # Create new connection
         connection_id = str(uuid.uuid4())
-        
+
         connection_config = ConnectionConfig(
             connection_id=connection_id,
             connector_type=connector_type,
@@ -237,10 +244,10 @@ class ConnectionManager:
         )
 
         self.connections[connection_id] = connection_config
-        
+
         # Clean up duplicates (will keep the newest, which is the one we just created)
         await self.cleanup_duplicate_connections(remove_duplicates=True)
-        
+
         await self.save_connections()
         return connection_id
 
@@ -297,16 +304,20 @@ class ConnectionManager:
     async def get_connector(self, connection_id: str) -> Optional[BaseConnector]:
         """Get an active connector instance"""
         logger.debug(f"Getting connector for connection_id: {connection_id}")
-        
+
         # Return cached connector if available
         if connection_id in self.active_connectors:
             connector = self.active_connectors[connection_id]
             if connector.is_authenticated:
-                logger.debug(f"Returning cached authenticated connector for {connection_id}")
+                logger.debug(
+                    f"Returning cached authenticated connector for {connection_id}"
+                )
                 return connector
             else:
                 # Remove unauthenticated connector from cache
-                logger.debug(f"Removing unauthenticated connector from cache for {connection_id}")
+                logger.debug(
+                    f"Removing unauthenticated connector from cache for {connection_id}"
+                )
                 del self.active_connectors[connection_id]
 
         # Try to create and authenticate connector
@@ -317,11 +328,11 @@ class ConnectionManager:
 
         logger.debug(f"Creating connector for {connection_config.connector_type}")
         connector = self._create_connector(connection_config)
-        
+
         logger.debug(f"Attempting authentication for {connection_id}")
         auth_result = await connector.authenticate()
         logger.debug(f"Authentication result for {connection_id}: {auth_result}")
-        
+
         if auth_result:
             self.active_connectors[connection_id] = connector
             # ... rest of the method
@@ -416,7 +427,7 @@ class ConnectionManager:
 
             return True
         return False
-    
+
     async def get_connection(self, connection_id: str) -> Optional[ConnectionConfig]:
         """Get connection configuration"""
         return self.connections.get(connection_id)

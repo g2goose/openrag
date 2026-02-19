@@ -4,6 +4,7 @@ Public API v1 Documents endpoint.
 Provides document ingestion and management.
 Uses API key authentication.
 """
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -120,31 +121,38 @@ async def delete_document_endpoint(request: Request, document_service, session_m
 
         # Get OpenSearch client (API key auth uses internal client)
         opensearch_client = session_manager.get_user_opensearch_client(
-            user.user_id, None  # No JWT for API key auth
+            user.user_id,
+            None,  # No JWT for API key auth
         )
 
         # Delete by query to remove all chunks of this document
         delete_query = build_filename_delete_body(filename)
 
         result = await opensearch_client.delete_by_query(
-            index=get_index_name(),
-            body=delete_query,
-            conflicts="proceed"
+            index=get_index_name(), body=delete_query, conflicts="proceed"
         )
 
         deleted_count = result.get("deleted", 0)
-        logger.info(f"Deleted {deleted_count} chunks for filename {filename}", user_id=user.user_id)
+        logger.info(
+            f"Deleted {deleted_count} chunks for filename {filename}",
+            user_id=user.user_id,
+        )
 
-        return JSONResponse({
-            "success": True,
-            "deleted_chunks": deleted_count,
-        })
+        return JSONResponse(
+            {
+                "success": True,
+                "deleted_chunks": deleted_count,
+            }
+        )
 
     except Exception as e:
         error_msg = str(e)
         logger.error("Document deletion failed", error=error_msg, filename=filename)
 
-        if "AuthenticationException" in error_msg or "access denied" in error_msg.lower():
+        if (
+            "AuthenticationException" in error_msg
+            or "access denied" in error_msg.lower()
+        ):
             return JSONResponse({"error": error_msg}, status_code=403)
         else:
             return JSONResponse({"error": error_msg}, status_code=500)

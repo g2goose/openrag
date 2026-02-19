@@ -1,6 +1,7 @@
 """
 API Key Service for managing user API keys for public API authentication.
 """
+
 import hashlib
 import secrets
 from datetime import datetime
@@ -89,6 +90,7 @@ class APIKeyService:
 
             # Get OpenSearch client
             from config.settings import clients
+
             opensearch_client = clients.opensearch
 
             # Index the key document
@@ -141,6 +143,7 @@ class APIKeyService:
 
             # Get OpenSearch client
             from config.settings import clients
+
             opensearch_client = clients.opensearch
 
             # Search for the key by hash
@@ -172,11 +175,7 @@ class APIKeyService:
                 await opensearch_client.update(
                     index=API_KEYS_INDEX_NAME,
                     id=key_doc["key_id"],
-                    body={
-                        "doc": {
-                            "last_used_at": datetime.utcnow().isoformat()
-                        }
-                    },
+                    body={"doc": {"last_used_at": datetime.utcnow().isoformat()}},
                 )
             except Exception:
                 pass  # Don't fail validation if update fails
@@ -210,13 +209,12 @@ class APIKeyService:
         try:
             # Get OpenSearch client
             from config.settings import clients
+
             opensearch_client = clients.opensearch
 
             # Search for user's keys
             search_body = {
-                "query": {
-                    "term": {"user_id": user_id}
-                },
+                "query": {"term": {"user_id": user_id}},
                 "sort": [{"created_at": {"order": "desc"}}],
                 "_source": [
                     "key_id",
@@ -264,6 +262,7 @@ class APIKeyService:
         try:
             # Get OpenSearch client
             from config.settings import clients
+
             opensearch_client = clients.opensearch
 
             # First, verify the key belongs to this user
@@ -274,7 +273,10 @@ class APIKeyService:
                 )
 
                 if doc["_source"]["user_id"] != user_id:
-                    return {"success": False, "error": "Not authorized to revoke this key"}
+                    return {
+                        "success": False,
+                        "error": "Not authorized to revoke this key",
+                    }
 
             except Exception:
                 return {"success": False, "error": "Key not found"}
@@ -283,11 +285,7 @@ class APIKeyService:
             result = await opensearch_client.update(
                 index=API_KEYS_INDEX_NAME,
                 id=key_id,
-                body={
-                    "doc": {
-                        "revoked": True
-                    }
-                },
+                body={"doc": {"revoked": True}},
                 refresh="wait_for",
             )
 
@@ -330,6 +328,7 @@ class APIKeyService:
         try:
             # Get OpenSearch client
             from config.settings import clients
+
             opensearch_client = clients.opensearch
 
             # First, verify the key belongs to this user
@@ -340,7 +339,10 @@ class APIKeyService:
                 )
 
                 if doc["_source"]["user_id"] != user_id:
-                    return {"success": False, "error": "Not authorized to delete this key"}
+                    return {
+                        "success": False,
+                        "error": "Not authorized to delete this key",
+                    }
 
             except Exception:
                 return {"success": False, "error": "Key not found"}

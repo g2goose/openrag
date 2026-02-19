@@ -4,6 +4,7 @@ Public API v1 Knowledge Filters endpoints.
 Provides knowledge filter management.
 Uses API key authentication.
 """
+
 from starlette.requests import Request
 from api import knowledge_filter
 

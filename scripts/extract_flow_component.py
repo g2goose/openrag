@@ -64,8 +64,7 @@ def extract_code_from_flow(
 
     if not matches:
         raise SystemExit(
-            "[error] no component found matching the supplied filters "
-            f"in {flow_path}"
+            f"[error] no component found matching the supplied filters in {flow_path}"
         )
 
     if match_index < 0 or match_index >= len(matches):
@@ -118,14 +117,14 @@ def parse_args() -> argparse.Namespace:
         try:
             flow_data = json.loads(args.flow_file.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            raise SystemExit(f"[error] failed to parse {args.flow_file}: {exc}") from exc
+            raise SystemExit(
+                f"[error] failed to parse {args.flow_file}: {exc}"
+            ) from exc
 
         nodes = flow_data.get("data", {}).get("nodes", [])
         display_names = sorted(
             {
-                node.get("data", {})
-                .get("node", {})
-                .get("display_name", "<unknown>")
+                node.get("data", {}).get("node", {}).get("display_name", "<unknown>")
                 for node in nodes
             }
         )
@@ -140,7 +139,9 @@ def parse_args() -> argparse.Namespace:
             print(f"  [{idx}] {name}")
 
         while True:
-            choice = input(f"Enter choice (0-{len(display_names)-1}): ").strip() or "0"
+            choice = (
+                input(f"Enter choice (0-{len(display_names) - 1}): ").strip() or "0"
+            )
             if choice.isdigit():
                 index = int(choice)
                 if 0 <= index < len(display_names):

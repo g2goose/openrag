@@ -72,11 +72,13 @@ class ChatService:
         # Pass the selected embedding model as a global variable
         from config.settings import get_openrag_config
         from utils.langflow_headers import add_provider_credentials_to_headers
-        
+
         config = get_openrag_config()
         embedding_model = config.knowledge.embedding_model
-        extra_headers["X-LANGFLOW-GLOBAL-VAR-SELECTED_EMBEDDING_MODEL"] = embedding_model
-        
+        extra_headers["X-LANGFLOW-GLOBAL-VAR-SELECTED_EMBEDDING_MODEL"] = (
+            embedding_model
+        )
+
         # Add provider credentials to headers
         add_provider_credentials_to_headers(extra_headers, config)
         logger.debug(f"[LF] Extra headers {extra_headers}")
@@ -140,7 +142,6 @@ class ChatService:
                 "Langflow client not initialized. Ensure LANGFLOW is reachable or set LANGFLOW_KEY."
             )
 
-
         if stream:
             from agent import async_langflow_chat_stream
 
@@ -194,11 +195,13 @@ class ChatService:
         # Pass the selected embedding model as a global variable
         from config.settings import get_openrag_config
         from utils.langflow_headers import add_provider_credentials_to_headers
-        
+
         config = get_openrag_config()
         embedding_model = config.knowledge.embedding_model
-        extra_headers["X-LANGFLOW-GLOBAL-VAR-SELECTED_EMBEDDING_MODEL"] = embedding_model
-        
+        extra_headers["X-LANGFLOW-GLOBAL-VAR-SELECTED_EMBEDDING_MODEL"] = (
+            embedding_model
+        )
+
         # Add provider credentials to headers
         add_provider_credentials_to_headers(extra_headers, config)
 
@@ -233,13 +236,9 @@ class ChatService:
         # If no user filters are active, exclude sample data from nudges
         if not has_user_filters:
             # Add a bool query with must_not to exclude sample data
-            filter_clauses.append({
-                "bool": {
-                    "must_not": [
-                        {"term": {"is_sample_data": "true"}}
-                    ]
-                }
-            })
+            filter_clauses.append(
+                {"bool": {"must_not": [{"term": {"is_sample_data": "true"}}]}}
+            )
             logger.info("Excluding sample data from nudges (no user filters active)")
 
         # Set the filter clauses if we have any
@@ -288,7 +287,6 @@ class ChatService:
 
         from agent import async_langflow_chat
 
-
         response_text, response_id = await async_langflow_chat(
             langflow_client,
             NUDGES_FLOW_ID,
@@ -323,14 +321,16 @@ class ChatService:
             # Pass the selected embedding model as a global variable
             from config.settings import get_openrag_config
             from utils.langflow_headers import add_provider_credentials_to_headers
-            
+
             config = get_openrag_config()
             embedding_model = config.knowledge.embedding_model
-            extra_headers["X-LANGFLOW-GLOBAL-VAR-SELECTED_EMBEDDING_MODEL"] = embedding_model
-            
+            extra_headers["X-LANGFLOW-GLOBAL-VAR-SELECTED_EMBEDDING_MODEL"] = (
+                embedding_model
+            )
+
             # Add provider credentials to headers
             add_provider_credentials_to_headers(extra_headers, config)
-            
+
             # Ensure the Langflow client exists; try lazy init if needed
             langflow_client = await clients.ensure_langflow_client()
             if not langflow_client:
@@ -595,6 +595,7 @@ class ChatService:
         try:
             # Delete from local conversation storage
             from agent import delete_user_conversation
+
             local_deleted = await delete_user_conversation(user_id, session_id)
 
             # Delete from Langflow using the monitor API
@@ -610,22 +611,18 @@ class ChatService:
                 "success": success,
                 "local_deleted": local_deleted,
                 "langflow_deleted": langflow_deleted,
-                "error": error_msg
+                "error": error_msg,
             }
 
         except Exception as e:
             logger.error(f"Error deleting session {session_id} for user {user_id}: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     async def _delete_langflow_session(self, session_id: str):
         """Delete a session from Langflow using the monitor API"""
         try:
             response = await clients.langflow_request(
-                "DELETE",
-                f"/api/v1/monitor/messages/session/{session_id}"
+                "DELETE", f"/api/v1/monitor/messages/session/{session_id}"
             )
 
             if response.status_code == 200 or response.status_code == 204:

@@ -13,7 +13,7 @@ def _parse_json_error_message(error_text: str) -> str:
     try:
         # Try to parse as JSON
         error_data = json.loads(error_text)
-        
+
         if isinstance(error_data, dict):
             # WatsonX format: {"errors": [{"code": "...", "message": "..."}], ...}
             if "errors" in error_data and isinstance(error_data["errors"], list):
@@ -25,7 +25,7 @@ def _parse_json_error_message(error_text: str) -> str:
                     code = errors[0].get("code", "")
                     if code:
                         return f"Error: {code}"
-            
+
             # OpenAI format: {"error": {"message": "...", "type": "...", "code": "..."}}
             if "error" in error_data:
                 error_obj = error_data["error"]
@@ -33,17 +33,17 @@ def _parse_json_error_message(error_text: str) -> str:
                     message = error_obj.get("message", "")
                     if message:
                         return message
-            
+
             # Direct message field
             if "message" in error_data:
                 return error_data["message"]
-            
+
             # Generic format: {"detail": "..."}
             if "detail" in error_data:
                 return error_data["detail"]
     except (json.JSONDecodeError, ValueError, TypeError):
         pass
-    
+
     # Return original text if not JSON or can't parse
     return error_text
 
@@ -53,7 +53,7 @@ def _extract_error_details(response: httpx.Response) -> str:
     try:
         # Try to parse JSON error response
         error_data = response.json()
-        
+
         # Common error response formats
         if isinstance(error_data, dict):
             # WatsonX format: {"errors": [{"code": "...", "message": "..."}], ...}
@@ -68,7 +68,7 @@ def _extract_error_details(response: httpx.Response) -> str:
                     code = errors[0].get("code", "")
                     if code:
                         return f"Error: {code}"
-            
+
             # OpenAI format: {"error": {"message": "...", "type": "...", "code": "..."}}
             if "error" in error_data:
                 error_obj = error_data["error"]
@@ -83,25 +83,27 @@ def _extract_error_details(response: httpx.Response) -> str:
                         if code:
                             details += f" (code: {code})"
                         return details
-            
+
             # Anthropic format: {"error": {"message": "...", "type": "..."}}
             if "message" in error_data:
                 return error_data["message"]
-            
+
             # Generic format: {"message": "..."}
             if "detail" in error_data:
                 return error_data["detail"]
-        
+
         # If JSON parsing worked but no structured error found, try parsing text
         response_text = response.text[:500]
         parsed = _parse_json_error_message(response_text)
         if parsed != response_text:
             return parsed
         return response_text
-        
+
     except (json.JSONDecodeError, ValueError):
         # If JSON parsing fails, try parsing the text as JSON string
-        response_text = response.text[:500] if response.text else f"HTTP {response.status_code}"
+        response_text = (
+            response.text[:500] if response.text else f"HTTP {response.status_code}"
+        )
         parsed = _parse_json_error_message(response_text)
         if parsed != response_text:
             return parsed
@@ -136,7 +138,9 @@ async def validate_provider_setup(
     provider_lower = provider.lower()
 
     try:
-        logger.info(f"Starting validation for provider: {provider_lower} (test_completion={test_completion})")
+        logger.info(
+            f"Starting validation for provider: {provider_lower} (test_completion={test_completion})"
+        )
 
         if test_completion:
             # Full validation with completion/embedding tests (consumes credits)
@@ -207,7 +211,9 @@ async def test_completion_with_tools(
     if provider == "openai":
         await _test_openai_completion_with_tools(api_key, llm_model)
     elif provider == "watsonx":
-        await _test_watsonx_completion_with_tools(api_key, llm_model, endpoint, project_id)
+        await _test_watsonx_completion_with_tools(
+            api_key, llm_model, endpoint, project_id
+        )
     elif provider == "ollama":
         await _test_ollama_completion_with_tools(llm_model, endpoint)
     elif provider == "anthropic":
@@ -238,7 +244,7 @@ async def test_embedding(
 # OpenAI validation functions
 async def _test_openai_lightweight_health(api_key: str) -> None:
     """Test OpenAI API key validity with lightweight check.
-    
+
     Only checks if the API key is valid without consuming credits.
     Uses the /v1/models endpoint which doesn't consume credits.
     """
@@ -258,7 +264,9 @@ async def _test_openai_lightweight_health(api_key: str) -> None:
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"OpenAI lightweight health check failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"OpenAI lightweight health check failed: {response.status_code} - {error_details}"
+                )
                 raise Exception(f"OpenAI API key validation failed: {error_details}")
 
             logger.info("OpenAI lightweight health check passed")
@@ -296,12 +304,12 @@ async def _test_openai_completion_with_tools(api_key: str, llm_model: str) -> No
                             "properties": {
                                 "location": {
                                     "type": "string",
-                                    "description": "The city and state"
+                                    "description": "The city and state",
                                 }
                             },
-                            "required": ["location"]
-                        }
-                    }
+                            "required": ["location"],
+                        },
+                    },
                 }
             ],
         }
@@ -318,7 +326,9 @@ async def _test_openai_completion_with_tools(api_key: str, llm_model: str) -> No
 
             # If max_tokens doesn't work, try with max_completion_tokens
             if response.status_code != 200:
-                logger.info("max_tokens parameter failed, trying max_completion_tokens instead")
+                logger.info(
+                    "max_tokens parameter failed, trying max_completion_tokens instead"
+                )
                 payload = {**base_payload, "max_completion_tokens": 50}
                 response = await client.post(
                     "https://api.openai.com/v1/chat/completions",
@@ -329,7 +339,9 @@ async def _test_openai_completion_with_tools(api_key: str, llm_model: str) -> No
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"OpenAI completion test failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"OpenAI completion test failed: {response.status_code} - {error_details}"
+                )
                 raise Exception(f"OpenAI API error: {error_details}")
 
             logger.info("OpenAI completion with tool calling test passed")
@@ -365,7 +377,9 @@ async def _test_openai_embedding(api_key: str, embedding_model: str) -> None:
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"OpenAI embedding test failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"OpenAI embedding test failed: {response.status_code} - {error_details}"
+                )
                 raise Exception(f"OpenAI API error: {error_details}")
 
             data = response.json()
@@ -387,7 +401,7 @@ async def _test_watsonx_lightweight_health(
     api_key: str, endpoint: str, project_id: str
 ) -> None:
     """Test WatsonX API key validity with lightweight check.
-    
+
     Only checks if the API key is valid by getting a bearer token.
     Does not consume credits by avoiding model inference requests.
     """
@@ -406,8 +420,12 @@ async def _test_watsonx_lightweight_health(
 
             if token_response.status_code != 200:
                 error_details = _extract_error_details(token_response)
-                logger.error(f"IBM IAM token request failed: {token_response.status_code} - {error_details}")
-                raise Exception(f"Failed to authenticate with IBM Watson: {error_details}")
+                logger.error(
+                    f"IBM IAM token request failed: {token_response.status_code} - {error_details}"
+                )
+                raise Exception(
+                    f"Failed to authenticate with IBM Watson: {error_details}"
+                )
 
             bearer_token = token_response.json().get("access_token")
             if not bearer_token:
@@ -442,8 +460,12 @@ async def _test_watsonx_completion_with_tools(
 
             if token_response.status_code != 200:
                 error_details = _extract_error_details(token_response)
-                logger.error(f"IBM IAM token request failed: {token_response.status_code} - {error_details}")
-                raise Exception(f"Failed to authenticate with IBM Watson: {error_details}")
+                logger.error(
+                    f"IBM IAM token request failed: {token_response.status_code} - {error_details}"
+                )
+                raise Exception(
+                    f"Failed to authenticate with IBM Watson: {error_details}"
+                )
 
             bearer_token = token_response.json().get("access_token")
             if not bearer_token:
@@ -474,12 +496,12 @@ async def _test_watsonx_completion_with_tools(
                             "properties": {
                                 "location": {
                                     "type": "string",
-                                    "description": "The city and state"
+                                    "description": "The city and state",
                                 }
                             },
-                            "required": ["location"]
-                        }
-                    }
+                            "required": ["location"],
+                        },
+                    },
                 }
             ],
             "max_tokens": 50,
@@ -496,7 +518,9 @@ async def _test_watsonx_completion_with_tools(
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"IBM Watson completion test failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"IBM Watson completion test failed: {response.status_code} - {error_details}"
+                )
                 # If error_details is still JSON, parse it to extract just the message
                 parsed_details = _parse_json_error_message(error_details)
                 raise Exception(f"IBM Watson API error: {parsed_details}")
@@ -537,8 +561,12 @@ async def _test_watsonx_embedding(
 
             if token_response.status_code != 200:
                 error_details = _extract_error_details(token_response)
-                logger.error(f"IBM IAM token request failed: {token_response.status_code} - {error_details}")
-                raise Exception(f"Failed to authenticate with IBM Watson: {error_details}")
+                logger.error(
+                    f"IBM IAM token request failed: {token_response.status_code} - {error_details}"
+                )
+                raise Exception(
+                    f"Failed to authenticate with IBM Watson: {error_details}"
+                )
 
             bearer_token = token_response.json().get("access_token")
             if not bearer_token:
@@ -569,7 +597,9 @@ async def _test_watsonx_embedding(
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"IBM Watson embedding test failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"IBM Watson embedding test failed: {response.status_code} - {error_details}"
+                )
                 # If error_details is still JSON, parse it to extract just the message
                 parsed_details = _parse_json_error_message(error_details)
                 raise Exception(f"IBM Watson API error: {parsed_details}")
@@ -598,7 +628,7 @@ async def _test_watsonx_embedding(
 # Ollama validation functions
 async def _test_ollama_lightweight_health(endpoint: str) -> None:
     """Test Ollama availability with lightweight status check.
-    
+
     Only checks if the endpoint returns a 200 status without fetching data.
     """
     try:
@@ -612,7 +642,9 @@ async def _test_ollama_lightweight_health(endpoint: str) -> None:
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"Ollama lightweight health check failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"Ollama lightweight health check failed: {response.status_code} - {error_details}"
+                )
                 raise Exception(f"Ollama endpoint not responding: {error_details}")
 
             logger.info("Ollama lightweight health check passed")
@@ -647,12 +679,12 @@ async def _test_ollama_completion_with_tools(llm_model: str, endpoint: str) -> N
                             "properties": {
                                 "location": {
                                     "type": "string",
-                                    "description": "The city and state"
+                                    "description": "The city and state",
                                 }
                             },
-                            "required": ["location"]
-                        }
-                    }
+                            "required": ["location"],
+                        },
+                    },
                 }
             ],
             "stream": False,
@@ -667,7 +699,9 @@ async def _test_ollama_completion_with_tools(llm_model: str, endpoint: str) -> N
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"Ollama completion test failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"Ollama completion test failed: {response.status_code} - {error_details}"
+                )
                 raise Exception(f"Ollama API error: {error_details}")
 
             logger.info("Ollama completion with tool calling test passed")
@@ -700,7 +734,9 @@ async def _test_ollama_embedding(embedding_model: str, endpoint: str) -> None:
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"Ollama embedding test failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"Ollama embedding test failed: {response.status_code} - {error_details}"
+                )
                 raise Exception(f"Ollama API error: {error_details}")
 
             data = response.json()
@@ -720,7 +756,7 @@ async def _test_ollama_embedding(embedding_model: str, endpoint: str) -> None:
 # Anthropic validation functions
 async def _test_anthropic_lightweight_health(api_key: str) -> None:
     """Test Anthropic API key validity with lightweight check.
-    
+
     Only checks if the API key is valid without consuming credits.
     Uses a minimal messages request with max_tokens=1 to validate the key.
     """
@@ -748,7 +784,9 @@ async def _test_anthropic_lightweight_health(api_key: str) -> None:
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"Anthropic lightweight health check failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"Anthropic lightweight health check failed: {response.status_code} - {error_details}"
+                )
                 raise Exception(f"Anthropic API key validation failed: {error_details}")
 
             logger.info("Anthropic lightweight health check passed")
@@ -786,11 +824,11 @@ async def _test_anthropic_completion_with_tools(api_key: str, llm_model: str) ->
                         "properties": {
                             "location": {
                                 "type": "string",
-                                "description": "The city and state"
+                                "description": "The city and state",
                             }
                         },
-                        "required": ["location"]
-                    }
+                        "required": ["location"],
+                    },
                 }
             ],
         }
@@ -805,7 +843,9 @@ async def _test_anthropic_completion_with_tools(api_key: str, llm_model: str) ->
 
             if response.status_code != 200:
                 error_details = _extract_error_details(response)
-                logger.error(f"Anthropic completion test failed: {response.status_code} - {error_details}")
+                logger.error(
+                    f"Anthropic completion test failed: {response.status_code} - {error_details}"
+                )
                 raise Exception(f"Anthropic API error: {error_details}")
 
             logger.info("Anthropic completion with tool calling test passed")

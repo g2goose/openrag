@@ -20,7 +20,10 @@ class LangflowMCPService:
             data = response.json()
             if isinstance(data, list):
                 return data
-            logger.warning("Unexpected response format for MCP servers list", data_type=type(data).__name__)
+            logger.warning(
+                "Unexpected response format for MCP servers list",
+                data_type=type(data).__name__,
+            )
             return []
         except Exception as e:
             logger.error("Failed to list MCP servers", error=str(e))
@@ -56,7 +59,10 @@ class LangflowMCPService:
             token = updated_args[i]
             if token == "--headers" and i + 2 < len(updated_args):
                 header_key = updated_args[i + 1]
-                if isinstance(header_key, str) and header_key.lower() == "x-langflow-global-var-jwt".lower():
+                if (
+                    isinstance(header_key, str)
+                    and header_key.lower() == "x-langflow-global-var-jwt".lower()
+                ):
                     found_index = i
                     break
                 i += 3
@@ -71,15 +77,19 @@ class LangflowMCPService:
                 # Malformed existing header triplet; make sure to append a value
                 updated_args.append(jwt_token)
         else:
-            updated_args.extend([
-                "--headers",
-                "X-Langflow-Global-Var-JWT",
-                jwt_token,
-            ])
+            updated_args.extend(
+                [
+                    "--headers",
+                    "X-Langflow-Global-Var-JWT",
+                    jwt_token,
+                ]
+            )
 
         return updated_args
-    
-    def _upsert_global_var_headers_in_args(self, args: List[str], global_vars: Dict[str, str]) -> List[str]:
+
+    def _upsert_global_var_headers_in_args(
+        self, args: List[str], global_vars: Dict[str, str]
+    ) -> List[str]:
         """Ensure args contains header triplets for X-Langflow-Global-Var-{key} with the provided global variables.
 
         Args are expected in the pattern: [..., "--headers", key, value, ...].
@@ -92,14 +102,17 @@ class LangflowMCPService:
 
         for var_key, var_value in global_vars.items():
             header_name = f"X-Langflow-Global-Var-{var_key}"
-            
+
             i = 0
             found_index = -1
             while i < len(updated_args):
                 token = updated_args[i]
                 if token == "--headers" and i + 2 < len(updated_args):
                     header_key = updated_args[i + 1]
-                    if isinstance(header_key, str) and header_key.lower() == header_name.lower():
+                    if (
+                        isinstance(header_key, str)
+                        and header_key.lower() == header_name.lower()
+                    ):
                         found_index = i
                         break
                     i += 3
@@ -114,15 +127,19 @@ class LangflowMCPService:
                     # Malformed existing header triplet; make sure to append a value
                     updated_args.append(var_value)
             else:
-                updated_args.extend([
-                    "--headers",
-                    header_name,
-                    var_value,
-                ])
+                updated_args.extend(
+                    [
+                        "--headers",
+                        header_name,
+                        var_value,
+                    ]
+                )
 
         return updated_args
 
-    async def patch_mcp_server_args_with_global_vars(self, server_name: str, global_vars: Dict[str, Any]) -> bool:
+    async def patch_mcp_server_args_with_global_vars(
+        self, server_name: str, global_vars: Dict[str, Any]
+    ) -> bool:
         """Patch a single MCP server to include/update multiple X-Langflow-Global-Var-* headers in args.
 
         Only non-empty values are applied. Keys are uppercased to match existing conventions (e.g., JWT).
@@ -179,7 +196,9 @@ class LangflowMCPService:
             )
             return False
 
-    async def update_mcp_servers_with_global_vars(self, global_vars: Dict[str, Any]) -> Dict[str, Any]:
+    async def update_mcp_servers_with_global_vars(
+        self, global_vars: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Fetch all MCP servers and ensure each includes provided global-var headers in args.
 
         Returns a summary dict with counts.
@@ -207,7 +226,9 @@ class LangflowMCPService:
             logger.warning("MCP servers update (global vars) had failures", **summary)
         return summary
 
-    async def patch_mcp_server_args_with_jwt(self, server_name: str, jwt_token: str) -> bool:
+    async def patch_mcp_server_args_with_jwt(
+        self, server_name: str, jwt_token: str
+    ) -> bool:
         """Patch a single MCP server to include/update the JWT header in args."""
         try:
             current = await self.get_mcp_server(server_name)
@@ -271,5 +292,3 @@ class LangflowMCPService:
         else:
             logger.warning("MCP servers update had failures", **summary)
         return summary
-
-

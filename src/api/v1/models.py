@@ -4,6 +4,7 @@ Public API v1 Models endpoint.
 Lists available LLM and embedding models per provider.
 Uses API key authentication. Uses stored credentials from config.
 """
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from config.settings import get_openrag_config

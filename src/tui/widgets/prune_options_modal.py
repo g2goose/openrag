@@ -89,7 +89,9 @@ class PruneOptionsModal(ModalScreen[str]):
             )
             with Horizontal(id="button-row"):
                 yield Button("Cancel", id="cancel-btn")
-                yield Button("Prune Unused Only", id="prune-unused-btn", variant="primary")
+                yield Button(
+                    "Prune Unused Only", id="prune-unused-btn", variant="primary"
+                )
                 yield Button("Stop & Prune All", id="prune-all-btn", variant="warning")
 
     def on_mount(self) -> None:

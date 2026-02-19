@@ -16,6 +16,7 @@ from .oauth import GoogleDriveOAuth
 
 logger = get_logger(__name__)
 
+
 # -------------------------
 # Config model
 # -------------------------
@@ -599,10 +600,7 @@ class GoogleDriveConnector(BaseConnector):
             }
         except Exception as e:
             # Log the error and re-raise to surface authentication/permission issues
-            logger.error(
-                f"GoogleDriveConnector.list_files failed: {e}",
-                exc_info=True
-            )
+            logger.error(f"GoogleDriveConnector.list_files failed: {e}", exc_info=True)
             raise
 
     def _extract_google_drive_acl(self, file_meta: Dict) -> DocumentACL:
@@ -620,10 +618,14 @@ class GoogleDriveConnector(BaseConnector):
         """
         try:
             # Fetch permissions (requires additional API call)
-            permissions_list = self.service.permissions().list(
-                fileId=file_meta["id"],
-                fields="permissions(emailAddress,role,type,deleted,displayName)"
-            ).execute()
+            permissions_list = (
+                self.service.permissions()
+                .list(
+                    fileId=file_meta["id"],
+                    fields="permissions(emailAddress,role,type,deleted,displayName)",
+                )
+                .execute()
+            )
 
             allowed_users = []
             allowed_groups = []

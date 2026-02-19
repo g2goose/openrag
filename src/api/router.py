@@ -157,7 +157,9 @@ async def langflow_upload_ingest_task(
                 f"Preparing to create langflow upload task: tweaks={tweaks}, settings={settings}, jwt_token={jwt_token}, user_name={user_name}, user_email={user_email}, session_id={session_id}, delete_after_ingest={delete_after_ingest}, temp_file_paths={temp_file_paths}",
             )
             # Create a map between temp_file_paths and original_filenames
-            file_path_to_original_filename = dict(zip(temp_file_paths, original_filenames))
+            file_path_to_original_filename = dict(
+                zip(temp_file_paths, original_filenames)
+            )
             logger.debug(
                 f"File path to original filename map: {file_path_to_original_filename}",
             )
@@ -184,10 +186,14 @@ async def langflow_upload_ingest_task(
                 "message": f"Langflow upload task created for {len(upload_files)} file(s)",
                 "file_count": len(upload_files),
                 "create_filter": create_filter,  # Pass flag back to frontend
-                "filename": original_filenames[0] if len(original_filenames) == 1 else None,  # Pass filename for filter creation
+                "filename": original_filenames[0]
+                if len(original_filenames) == 1
+                else None,  # Pass filename for filter creation
             }
 
-            return JSONResponse(response_data, status_code=202)  # 202 Accepted for async processing
+            return JSONResponse(
+                response_data, status_code=202
+            )  # 202 Accepted for async processing
 
         except Exception:
             # Clean up temp files on error

@@ -1,6 +1,7 @@
 """
 API Key middleware for authenticating public API requests.
 """
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from session_manager import User

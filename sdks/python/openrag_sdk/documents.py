@@ -124,7 +124,9 @@ class DocumentsClient:
             await asyncio.sleep(poll_interval)
             elapsed += poll_interval
 
-        raise TimeoutError(f"Ingestion task {task_id} did not complete within {timeout}s")
+        raise TimeoutError(
+            f"Ingestion task {task_id} did not complete within {timeout}s"
+        )
 
     async def delete(self, filename: str) -> DeleteDocumentResponse:
         """

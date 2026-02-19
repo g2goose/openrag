@@ -9,7 +9,9 @@ async def nudges_from_kb_endpoint(request: Request, chat_service, session_manage
     """Get nudges for a user"""
     user = request.state.user
     user_id = user.user_id
-    jwt_token = session_manager.get_effective_jwt_token(user_id, request.state.jwt_token)
+    jwt_token = session_manager.get_effective_jwt_token(
+        user_id, request.state.jwt_token
+    )
 
     try:
         # Parse request body for filters
@@ -43,7 +45,9 @@ async def nudges_from_chat_id_endpoint(request: Request, chat_service, session_m
     user_id = user.user_id
     chat_id = request.path_params["chat_id"]
 
-    jwt_token = session_manager.get_effective_jwt_token(user_id, request.state.jwt_token)
+    jwt_token = session_manager.get_effective_jwt_token(
+        user_id, request.state.jwt_token
+    )
 
     try:
         # Parse request body for filters

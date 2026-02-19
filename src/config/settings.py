@@ -44,7 +44,11 @@ if _legacy_flow_id and not os.getenv("LANGFLOW_CHAT_FLOW_ID"):
 
 
 # Langflow superuser credentials for API key generation
-LANGFLOW_AUTO_LOGIN = os.getenv("LANGFLOW_AUTO_LOGIN", "False").lower() in ("true", "1", "yes")
+LANGFLOW_AUTO_LOGIN = os.getenv("LANGFLOW_AUTO_LOGIN", "False").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 LANGFLOW_SUPERUSER = os.getenv("LANGFLOW_SUPERUSER")
 LANGFLOW_SUPERUSER_PASSWORD = os.getenv("LANGFLOW_SUPERUSER_PASSWORD")
 # Allow explicit key via environment; generation will be skipped if set
@@ -60,9 +64,11 @@ DISABLE_INGEST_WITH_LANGFLOW = os.getenv(
 ).lower() in ("true", "1", "yes")
 
 # Ingest sample data configuration
-INGEST_SAMPLE_DATA = os.getenv(
-    "INGEST_SAMPLE_DATA", "true"
-).lower() in ("true", "1", "yes")
+INGEST_SAMPLE_DATA = os.getenv("INGEST_SAMPLE_DATA", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 
 # Maximum number of files to upload / ingest (in batch) per task when adding knowledge via folder
 UPLOAD_BATCH_SIZE = int(os.getenv("UPLOAD_BATCH_SIZE", "25"))
@@ -71,7 +77,9 @@ UPLOAD_BATCH_SIZE = int(os.getenv("UPLOAD_BATCH_SIZE", "25"))
 # For large documents (300+ pages), ingestion can take 30+ minutes
 # Default: 40 minutes total, 40 minutes read timeout
 LANGFLOW_TIMEOUT = float(os.getenv("LANGFLOW_TIMEOUT", "2400"))  # 40 minutes
-LANGFLOW_CONNECT_TIMEOUT = float(os.getenv("LANGFLOW_CONNECT_TIMEOUT", "30"))  # 30 seconds
+LANGFLOW_CONNECT_TIMEOUT = float(
+    os.getenv("LANGFLOW_CONNECT_TIMEOUT", "30")
+)  # 30 seconds
 
 # Per-file processing timeout for document ingestion tasks (in seconds)
 # Should be >= LANGFLOW_TIMEOUT to allow long-running ingestion to complete
@@ -95,22 +103,22 @@ VECTOR_DIM = 1536
 EMBED_MODEL = "text-embedding-3-small"
 
 OPENAI_EMBEDDING_DIMENSIONS = {
-        "text-embedding-3-small": 1536,
-        "text-embedding-3-large": 3072,
-        "text-embedding-ada-002": 1536,
-    }
+    "text-embedding-3-small": 1536,
+    "text-embedding-3-large": 3072,
+    "text-embedding-ada-002": 1536,
+}
 
 WATSONX_EMBEDDING_DIMENSIONS = {
-# IBM Models
-"ibm/granite-embedding-107m-multilingual": 384,
-"ibm/granite-embedding-278m-multilingual": 1024,
-"ibm/slate-125m-english-rtrvr": 768,
-"ibm/slate-125m-english-rtrvr-v2": 768,
-"ibm/slate-30m-english-rtrvr": 384,
-"ibm/slate-30m-english-rtrvr-v2": 384,
-# Third Party Models
-"intfloat/multilingual-e5-large": 1024,
-"sentence-transformers/all-minilm-l6-v2": 384,
+    # IBM Models
+    "ibm/granite-embedding-107m-multilingual": 384,
+    "ibm/granite-embedding-278m-multilingual": 1024,
+    "ibm/slate-125m-english-rtrvr": 768,
+    "ibm/slate-125m-english-rtrvr-v2": 768,
+    "ibm/slate-30m-english-rtrvr": 384,
+    "ibm/slate-30m-english-rtrvr-v2": 384,
+    # Third Party Models
+    "intfloat/multilingual-e5-large": 1024,
+    "sentence-transformers/all-minilm-l6-v2": 384,
 }
 
 INDEX_BODY = {
@@ -166,7 +174,9 @@ API_KEYS_INDEX_BODY = {
         "properties": {
             "key_id": {"type": "keyword"},
             "key_hash": {"type": "keyword"},  # SHA-256 hash, never store plaintext
-            "key_prefix": {"type": "keyword"},  # First 8 chars for display (e.g., "orag_abc1")
+            "key_prefix": {
+                "type": "keyword"
+            },  # First 8 chars for display (e.g., "orag_abc1")
             "user_id": {"type": "keyword"},
             "user_email": {"type": "keyword"},
             "name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
@@ -210,7 +220,9 @@ async def get_langflow_api_key(force_regenerate: bool = False):
     password = LANGFLOW_SUPERUSER_PASSWORD
 
     if LANGFLOW_AUTO_LOGIN and (not username or not password):
-        logger.info("LANGFLOW_AUTO_LOGIN is enabled, using default langflow/langflow credentials")
+        logger.info(
+            "LANGFLOW_AUTO_LOGIN is enabled, using default langflow/langflow credentials"
+        )
         username = username or "langflow"
         password = password or "langflow"
 
@@ -304,8 +316,12 @@ class AppClients:
         self.opensearch = None
         self.langflow_client = None
         self.langflow_http_client = None
-        self._patched_async_client = None  # Private attribute - single client for all providers
-        self._client_init_lock = __import__('threading').Lock()  # Lock for thread-safe initialization
+        self._patched_async_client = (
+            None  # Private attribute - single client for all providers
+        )
+        self._client_init_lock = __import__(
+            "threading"
+        ).Lock()  # Lock for thread-safe initialization
         self.converter = None
 
     async def initialize(self):
@@ -350,9 +366,13 @@ class AppClients:
         # The property will handle lazy initialization with probe when first accessed
         openai_key = os.getenv("OPENAI_API_KEY")
         if openai_key:
-            logger.info("OpenAI API key found in environment - will be initialized lazily on first use with HTTP/2 probe")
+            logger.info(
+                "OpenAI API key found in environment - will be initialized lazily on first use with HTTP/2 probe"
+            )
         else:
-            logger.info("OpenAI API key not found in environment - will be initialized on first use if needed")
+            logger.info(
+                "OpenAI API key not found in environment - will be initialized on first use if needed"
+            )
 
         # Initialize document converter
         self.converter = create_document_converter(ocr_engine=DOCLING_OCR_ENGINE)
@@ -367,7 +387,7 @@ class AppClients:
                 read=LANGFLOW_TIMEOUT,  # Read timeout (most important for large PDFs)
                 write=LANGFLOW_CONNECT_TIMEOUT,  # Write timeout
                 pool=LANGFLOW_CONNECT_TIMEOUT,  # Pool timeout
-            )
+            ),
         )
         logger.info(
             "Initialized Langflow HTTP client with extended timeouts",
@@ -438,9 +458,13 @@ class AppClients:
                     os.environ["WATSONX_API_KEY"] = config.providers.watsonx.api_key
                 if config.providers.watsonx.endpoint:
                     os.environ["WATSONX_ENDPOINT"] = config.providers.watsonx.endpoint
-                    os.environ["WATSONX_API_BASE"] = config.providers.watsonx.endpoint  # LiteLLM expects this name
+                    os.environ["WATSONX_API_BASE"] = (
+                        config.providers.watsonx.endpoint
+                    )  # LiteLLM expects this name
                 if config.providers.watsonx.project_id:
-                    os.environ["WATSONX_PROJECT_ID"] = config.providers.watsonx.project_id
+                    os.environ["WATSONX_PROJECT_ID"] = (
+                        config.providers.watsonx.project_id
+                    )
                 if config.providers.watsonx.api_key:
                     logger.debug("Loaded WatsonX credentials from config")
 
@@ -451,7 +475,9 @@ class AppClients:
                     logger.debug("Loaded Ollama endpoint from config")
 
             except Exception as e:
-                logger.debug("Could not load provider credentials from config", error=str(e))
+                logger.debug(
+                    "Could not load provider credentials from config", error=str(e)
+                )
 
             # Try to initialize the client - AsyncOpenAI() will read from environment
             # We'll try HTTP/2 first with a probe, then fall back to HTTP/1.1 if it times out
@@ -468,15 +494,19 @@ class AppClients:
                     # Probe with a small embedding and short timeout
                     await asyncio.wait_for(
                         client_http2.embeddings.create(
-                            model='text-embedding-3-small',
-                            input=['test']
+                            model="text-embedding-3-small", input=["test"]
                         ),
-                        timeout=5.0
+                        timeout=5.0,
                     )
-                    logger.info("OpenAI client initialized with HTTP/2 (probe successful)")
+                    logger.info(
+                        "OpenAI client initialized with HTTP/2 (probe successful)"
+                    )
                     return client_http2
                 except (asyncio.TimeoutError, Exception) as probe_error:
-                    logger.warning("HTTP/2 probe failed, falling back to HTTP/1.1", error=str(probe_error))
+                    logger.warning(
+                        "HTTP/2 probe failed, falling back to HTTP/1.1",
+                        error=str(probe_error),
+                    )
                     # Close the HTTP/2 client
                     try:
                         await client_http2.close()
@@ -485,8 +515,7 @@ class AppClients:
 
                     # Fall back to HTTP/1.1 with explicit timeout settings
                     http_client = httpx.AsyncClient(
-                        http2=False,
-                        timeout=httpx.Timeout(60.0, connect=10.0)
+                        http2=False, timeout=httpx.Timeout(60.0, connect=10.0)
                     )
                     client_http1 = patch_openai_with_mcp(
                         AsyncOpenAI(http_client=http_client)
@@ -510,8 +539,12 @@ class AppClients:
                     self._patched_async_client = future.result(timeout=15)
                 logger.info("Successfully initialized OpenAI client")
             except Exception as e:
-                logger.error(f"Failed to initialize OpenAI client: {e.__class__.__name__}: {str(e)}")
-                raise ValueError(f"Failed to initialize OpenAI client: {str(e)}. Please complete onboarding or set OPENAI_API_KEY environment variable.")
+                logger.error(
+                    f"Failed to initialize OpenAI client: {e.__class__.__name__}: {str(e)}"
+                )
+                raise ValueError(
+                    f"Failed to initialize OpenAI client: {str(e)}. Please complete onboarding or set OPENAI_API_KEY environment variable."
+                )
 
             return self._patched_async_client
 
@@ -532,7 +565,9 @@ class AppClients:
                 await self._patched_async_client.close()
                 logger.info("Closed patched client for refresh")
             except Exception as e:
-                logger.warning("Failed to close patched client during refresh", error=str(e))
+                logger.warning(
+                    "Failed to close patched client during refresh", error=str(e)
+                )
             finally:
                 self._patched_async_client = None
 
@@ -778,9 +813,7 @@ OPENAI_LLM_COMPONENT_DISPLAY_NAME = os.getenv(
     "OPENAI_LLM_COMPONENT_DISPLAY_NAME", "Language Model"
 )
 
-AGENT_COMPONENT_DISPLAY_NAME = os.getenv(
-    "AGENT_COMPONENT_DISPLAY_NAME", "Agent"
-)
+AGENT_COMPONENT_DISPLAY_NAME = os.getenv("AGENT_COMPONENT_DISPLAY_NAME", "Agent")
 
 # Provider-specific component IDs
 WATSONX_EMBEDDING_COMPONENT_DISPLAY_NAME = os.getenv(
@@ -793,10 +826,14 @@ WATSONX_LLM_COMPONENT_DISPLAY_NAME = os.getenv(
 OLLAMA_EMBEDDING_COMPONENT_DISPLAY_NAME = os.getenv(
     "OLLAMA_EMBEDDING_COMPONENT_DISPLAY_NAME", "Ollama Embeddings"
 )
-OLLAMA_LLM_COMPONENT_DISPLAY_NAME = os.getenv("OLLAMA_LLM_COMPONENT_DISPLAY_NAME", "Ollama")
+OLLAMA_LLM_COMPONENT_DISPLAY_NAME = os.getenv(
+    "OLLAMA_LLM_COMPONENT_DISPLAY_NAME", "Ollama"
+)
 
 # Docling component ID for ingest flow
-DOCLING_COMPONENT_DISPLAY_NAME = os.getenv("DOCLING_COMPONENT_DISPLAY_NAME", "Docling Serve")
+DOCLING_COMPONENT_DISPLAY_NAME = os.getenv(
+    "DOCLING_COMPONENT_DISPLAY_NAME", "Docling Serve"
+)
 
 LOCALHOST_URL = get_container_host() or "localhost"
 
@@ -828,7 +865,11 @@ def get_agent_config():
 
 def get_embedding_model() -> str:
     """Return the currently configured embedding model."""
-    return get_openrag_config().knowledge.embedding_model or EMBED_MODEL if DISABLE_INGEST_WITH_LANGFLOW else ""
+    return (
+        get_openrag_config().knowledge.embedding_model or EMBED_MODEL
+        if DISABLE_INGEST_WITH_LANGFLOW
+        else ""
+    )
 
 
 def get_index_name() -> str:

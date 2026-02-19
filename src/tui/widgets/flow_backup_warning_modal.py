@@ -8,7 +8,7 @@ from textual.widgets import Button, Static, Label, Checkbox
 
 class FlowBackupWarningModal(ModalScreen[tuple[bool, bool]]):
     """Modal dialog to warn about flow backups before upgrade/reset.
-    
+
     Returns tuple of (continue, delete_backups)
     """
 
@@ -88,7 +88,7 @@ class FlowBackupWarningModal(ModalScreen[tuple[bool, bool]]):
 
     def __init__(self, operation: str = "upgrade"):
         """Initialize the warning modal.
-        
+
         Args:
             operation: The operation being performed ("upgrade" or "reset")
         """
@@ -106,10 +106,12 @@ class FlowBackupWarningModal(ModalScreen[tuple[bool, bool]]):
                 f"Other user-created flows aren't backed up; you must export these flows to preserve them.\n"
                 f"Learn more: https://docs.langflow.org/concepts-flows-import\n\n"
                 f"Choose whether to keep or delete the backup files of the built-in flows:",
-                id="message"
+                id="message",
             )
             with Vertical(id="checkbox-container"):
-                yield Checkbox("Delete backup files", id="delete-backups-checkbox", value=False)
+                yield Checkbox(
+                    "Delete backup files", id="delete-backups-checkbox", value=False
+                )
             with Horizontal(id="button-row"):
                 yield Button("Cancel", id="cancel-btn")
                 yield Button(f"Continue {self.operation.title()}", id="continue-btn")
@@ -122,6 +124,8 @@ class FlowBackupWarningModal(ModalScreen[tuple[bool, bool]]):
         """Handle button presses."""
         if event.button.id == "continue-btn":
             delete_backups = self.query_one("#delete-backups-checkbox", Checkbox).value
-            self.dismiss((True, delete_backups))  # User wants to continue, with delete preference
+            self.dismiss(
+                (True, delete_backups)
+            )  # User wants to continue, with delete preference
         else:
             self.dismiss((False, False))  # User cancelled

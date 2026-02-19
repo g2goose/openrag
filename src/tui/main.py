@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 from textual.app import App, ComposeResult
 from utils.logging_config import get_logger
+
 try:
     from importlib.resources import files
 except ImportError:
@@ -367,7 +368,7 @@ class OpenRAGTUI(App):
         self.container_manager = ContainerManager()
         self.env_manager = EnvManager()
         self.docling_manager = DoclingManager()  # Initialize singleton instance
-    
+
     def notify(
         self,
         message: str,
@@ -381,7 +382,9 @@ class OpenRAGTUI(App):
         # If timeout is None (default), make it 20 seconds
         if timeout is None:
             timeout = 20.0
-        super().notify(message, title=title, severity=severity, timeout=timeout, markup=markup)
+        super().notify(
+            message, title=title, severity=severity, timeout=timeout, markup=markup
+        )
 
     def on_mount(self) -> None:
         """Initialize the application."""
@@ -423,7 +426,13 @@ class OpenRAGTUI(App):
         return True, "Runtime requirements satisfied"
 
 
-def _copy_assets(resource_tree, destination: Path, allowed_suffixes: Optional[Iterable[str]] = None, *, force: bool = False) -> None:
+def _copy_assets(
+    resource_tree,
+    destination: Path,
+    allowed_suffixes: Optional[Iterable[str]] = None,
+    *,
+    force: bool = False,
+) -> None:
     """Copy packaged assets into destination and optionally overwrite existing files.
 
     When ``force`` is True, files are refreshed if the packaged bytes differ.
@@ -437,7 +446,9 @@ def _copy_assets(resource_tree, destination: Path, allowed_suffixes: Optional[It
             _copy_assets(resource, target_path, allowed_suffixes, force=force)
             continue
 
-        if allowed_suffixes and not any(resource.name.endswith(suffix) for suffix in allowed_suffixes):
+        if allowed_suffixes and not any(
+            resource.name.endswith(suffix) for suffix in allowed_suffixes
+        ):
             continue
         resource_bytes = resource.read_bytes()
 
@@ -449,7 +460,9 @@ def _copy_assets(resource_tree, destination: Path, allowed_suffixes: Optional[It
                 if target_path.read_bytes() == resource_bytes:
                     continue
             except Exception as read_error:
-                logger.debug(f"Failed to read existing asset {target_path}: {read_error}")
+                logger.debug(
+                    f"Failed to read existing asset {target_path}: {read_error}"
+                )
 
         target_path.write_bytes(resource_bytes)
         logger.info(f"Copied bundled asset: {target_path}")
@@ -457,33 +470,35 @@ def _copy_assets(resource_tree, destination: Path, allowed_suffixes: Optional[It
 
 def copy_sample_documents(*, force: bool = False) -> None:
     """Copy sample documents from package to host directory.
-    
+
     Uses the first path from OPENRAG_DOCUMENTS_PATHS env var.
     Defaults to ~/.openrag/documents if not configured.
     """
     from .managers.env_manager import EnvManager
     from pathlib import Path
-    
+
     # Get the configured documents path from env
     env_manager = EnvManager()
     env_manager.load_existing_env()
-    
+
     # Parse the first path from the documents paths config
     documents_path_str = env_manager.config.openrag_documents_paths
     if documents_path_str:
-        first_path = documents_path_str.split(',')[0].strip()
+        first_path = documents_path_str.split(",")[0].strip()
         # Expand $HOME and ~
         first_path = first_path.replace("$HOME", str(Path.home()))
         documents_dir = Path(first_path).expanduser()
     else:
         # Default fallback
         documents_dir = Path.home() / ".openrag" / "documents"
-    
+
     documents_dir.mkdir(parents=True, exist_ok=True)
 
     try:
         assets_files = files("tui._assets.openrag-documents")
-        _copy_assets(assets_files, documents_dir, allowed_suffixes=(".pdf",), force=force)
+        _copy_assets(
+            assets_files, documents_dir, allowed_suffixes=(".pdf",), force=force
+        )
     except Exception as e:
         logger.debug(f"Could not copy sample documents: {e}")
         # This is not a critical error - the app can work without sample documents
@@ -491,11 +506,11 @@ def copy_sample_documents(*, force: bool = False) -> None:
 
 def copy_sample_flows(*, force: bool = False) -> None:
     """Copy sample flows from package to host directory.
-    
+
     Flows are placed in ~/.openrag/flows/ which will be volume-mounted to containers.
     """
     from pathlib import Path
-    
+
     # Flows always go to ~/.openrag/flows/ - this will be volume-mounted
     flows_dir = Path.home() / ".openrag" / "flows"
     flows_dir.mkdir(parents=True, exist_ok=True)
@@ -511,7 +526,7 @@ def copy_sample_flows(*, force: bool = False) -> None:
 def copy_compose_files(*, force: bool = False) -> None:
     """Copy docker-compose templates into the TUI workspace if they are missing."""
     from utils.paths import get_tui_compose_file
-    
+
     try:
         assets_root = files("tui._assets")
     except Exception as e:
@@ -521,7 +536,7 @@ def copy_compose_files(*, force: bool = False) -> None:
     for filename in ("docker-compose.yml", "docker-compose.gpu.yml"):
         is_gpu = "gpu" in filename
         destination = get_tui_compose_file(gpu=is_gpu)
-        
+
         if destination.exists() and not force:
             continue
 
@@ -537,7 +552,9 @@ def copy_compose_files(*, force: bool = False) -> None:
                     if destination.read_bytes() == resource_bytes:
                         continue
                 except Exception as read_error:
-                    logger.debug(f"Failed to read existing compose file {destination}: {read_error}")
+                    logger.debug(
+                        f"Failed to read existing compose file {destination}: {read_error}"
+                    )
 
             destination.write_bytes(resource_bytes)
             logger.info(f"Copied docker-compose template to {destination}")
@@ -571,7 +588,11 @@ def migrate_legacy_data_directories():
         (cwd / "flows", target_base / "flows", "flows"),
         (cwd / "keys", target_base / "keys", "keys"),
         (cwd / "config", target_base / "config", "config"),
-        (cwd / "opensearch-data", target_base / "data" / "opensearch-data", "OpenSearch data"),
+        (
+            cwd / "opensearch-data",
+            target_base / "data" / "opensearch-data",
+            "OpenSearch data",
+        ),
     ]
 
     # Check which sources exist and need migration
@@ -584,6 +605,7 @@ def migrate_legacy_data_directories():
         # Still need to update .env with centralized paths
         try:
             from managers.env_manager import EnvManager
+
             env_manager = EnvManager()
             env_manager.load_existing_env()
             # Explicitly set centralized paths (overrides any old CWD-relative paths)
@@ -594,7 +616,9 @@ def migrate_legacy_data_directories():
             env_manager.config.openrag_flows_path = f"{home}/.openrag/flows"
             env_manager.config.openrag_config_path = f"{home}/.openrag/config"
             env_manager.config.openrag_data_path = f"{home}/.openrag/data"
-            env_manager.config.opensearch_data_path = f"{home}/.openrag/data/opensearch-data"
+            env_manager.config.opensearch_data_path = (
+                f"{home}/.openrag/data/opensearch-data"
+            )
             env_manager.save_env()
             logger.info("Updated .env file with centralized paths")
         except Exception as e:
@@ -663,6 +687,7 @@ def migrate_legacy_data_directories():
     # Update .env file with centralized paths
     try:
         from managers.env_manager import EnvManager
+
         env_manager = EnvManager()
         env_manager.load_existing_env()
         # Explicitly set centralized paths (overrides any old CWD-relative paths)
@@ -673,7 +698,9 @@ def migrate_legacy_data_directories():
         env_manager.config.openrag_flows_path = f"{home}/.openrag/flows"
         env_manager.config.openrag_config_path = f"{home}/.openrag/config"
         env_manager.config.openrag_data_path = f"{home}/.openrag/data"
-        env_manager.config.opensearch_data_path = f"{home}/.openrag/data/opensearch-data"
+        env_manager.config.opensearch_data_path = (
+            f"{home}/.openrag/data/opensearch-data"
+        )
         env_manager.save_env()
         print("  Updated .env with centralized paths")
         logger.info("Updated .env file with centralized paths")
@@ -713,9 +740,11 @@ def generate_jwt_keys(keys_dir: Path):
             [
                 "openssl",
                 "rsa",
-                "-in", str(private_key_path),
+                "-in",
+                str(private_key_path),
                 "-pubout",
-                "-out", str(public_key_path),
+                "-out",
+                str(public_key_path),
             ],
             check=True,
             capture_output=True,
@@ -725,7 +754,9 @@ def generate_jwt_keys(keys_dir: Path):
 
         logger.info("Generated RSA keys for JWT signing")
     except FileNotFoundError:
-        logger.warning("openssl not found, skipping JWT key generation (will be generated in container)")
+        logger.warning(
+            "openssl not found, skipping JWT key generation (will be generated in container)"
+        )
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to generate RSA keys: {e}")
 
@@ -763,6 +794,7 @@ def run_tui():
     """Run the OpenRAG TUI application."""
     # Check for native Windows before launching TUI
     from .utils.platform import PlatformDetector
+
     platform_detector = PlatformDetector()
 
     if platform_detector.is_native_windows():
@@ -775,6 +807,7 @@ def run_tui():
 
     # Run startup prerequisites (install runtime, health checks, etc.)
     from .utils.startup_checks import run_startup_checks
+
     if not run_startup_checks():
         sys.exit(1)
 
@@ -785,7 +818,7 @@ def run_tui():
 
         # Initialize host directory structure
         setup_host_directories()
-        
+
         # Keep bundled assets aligned with the packaged versions
         copy_sample_documents(force=True)
         copy_sample_flows(force=True)
@@ -799,7 +832,7 @@ def run_tui():
         logger.error("Error running OpenRAG TUI", error=str(e))
     finally:
         # Ensure cleanup happens even on exceptions
-        if app and hasattr(app, 'docling_manager'):
+        if app and hasattr(app, "docling_manager"):
             app.docling_manager.cleanup()
         sys.exit(0)
 

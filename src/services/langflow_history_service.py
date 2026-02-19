@@ -10,65 +10,71 @@ from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+
 class LangflowHistoryService:
     """Simplified service to retrieve message history from Langflow"""
-    
+
     def __init__(self):
         pass
-            
-    async def get_user_sessions(self, user_id: str, flow_id: Optional[str] = None) -> List[str]:
+
+    async def get_user_sessions(
+        self, user_id: str, flow_id: Optional[str] = None
+    ) -> List[str]:
         """Get all session IDs for a user's conversations"""
         try:
             params = {}
             if flow_id:
                 params["flow_id"] = flow_id
-                
+
             response = await clients.langflow_request(
-                "GET",
-                "/api/v1/monitor/messages/sessions",
-                params=params
+                "GET", "/api/v1/monitor/messages/sessions", params=params
             )
-            
+
             if response.status_code == 200:
                 session_ids = response.json()
                 logger.debug(f"Found {len(session_ids)} total sessions from Langflow")
                 return session_ids
             else:
-                logger.error(f"Failed to get sessions: {response.status_code} - {response.text}")
+                logger.error(
+                    f"Failed to get sessions: {response.status_code} - {response.text}"
+                )
                 return []
-                
+
         except Exception as e:
             logger.error(f"Error getting user sessions: {e}")
             return []
-            
-    async def get_session_messages(self, user_id: str, session_id: str) -> List[Dict[str, Any]]:
+
+    async def get_session_messages(
+        self, user_id: str, session_id: str
+    ) -> List[Dict[str, Any]]:
         """Get all messages for a specific session"""
         try:
             response = await clients.langflow_request(
                 "GET",
                 "/api/v1/monitor/messages",
-                params={
-                    "session_id": session_id,
-                    "order_by": "timestamp"
-                }
+                params={"session_id": session_id, "order_by": "timestamp"},
             )
-            
+
             if response.status_code == 200:
                 messages = response.json()
                 # Convert to OpenRAG format
                 return self._convert_langflow_messages(messages)
             else:
-                logger.error(f"Failed to get messages for session {session_id}: {response.status_code}")
+                logger.error(
+                    f"Failed to get messages for session {session_id}: {response.status_code}"
+                )
                 return []
-                
+
         except Exception as e:
             logger.error(f"Error getting session messages: {e}")
             return []
-            
-    def _convert_langflow_messages(self, langflow_messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+    def _convert_langflow_messages(
+        self, langflow_messages: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Convert Langflow messages to OpenRAG format"""
         converted_messages = []
-        
+
         for msg in langflow_messages:
             try:
                 # Map Langflow message format to OpenRAG format
@@ -84,16 +90,18 @@ class LangflowHistoryService:
                     "files": msg.get("files", []),
                     "properties": msg.get("properties", {}),
                     "error": msg.get("error", False),
-                    "edit": msg.get("edit", False)
+                    "edit": msg.get("edit", False),
                 }
-                
+
                 # Extract function calls from content_blocks if present
                 # Convert to match streaming format: chunk.item.type === "tool_call"
                 content_blocks = msg.get("content_blocks", [])
                 if content_blocks:
                     chunks = []
                     for block in content_blocks:
-                        if block.get("title") == "Agent Steps" and block.get("contents"):
+                        if block.get("title") == "Agent Steps" and block.get(
+                            "contents"
+                        ):
                             for content in block["contents"]:
                                 if content.get("type") == "tool_use":
                                     # Convert Langflow tool_use format to match streaming chunks format
@@ -105,32 +113,37 @@ class LangflowHistoryService:
                                             "tool_name": content.get("name", ""),
                                             "inputs": content.get("tool_input", {}),
                                             "results": content.get("output", {}),
-                                            "id": content.get("id") or content.get("run_id", ""),
-                                            "status": "completed" if not content.get("error") else "error"
-                                        }
+                                            "id": content.get("id")
+                                            or content.get("run_id", ""),
+                                            "status": "completed"
+                                            if not content.get("error")
+                                            else "error",
+                                        },
                                     }
                                     chunks.append(chunk)
-                    
+
                     if chunks:
                         converted_msg["chunks"] = chunks
-                
+
                 converted_messages.append(converted_msg)
-                
+
             except Exception as e:
                 logger.error(f"Error converting message: {e}")
                 continue
-                
+
         return converted_messages
-        
-    async def get_user_conversation_history(self, user_id: str, flow_id: Optional[str] = None) -> Dict[str, Any]:
+
+    async def get_user_conversation_history(
+        self, user_id: str, flow_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Get all conversation history for a user, organized by session
-        
+
         Simplified version - gets all sessions and lets the frontend filter by user_id
         """
         try:
             # Get all sessions (no complex filtering needed)
             session_ids = await self.get_user_sessions(user_id, flow_id)
-            
+
             conversations = []
             for session_id in session_ids:
                 messages = await self.get_session_messages(user_id, session_id)
@@ -138,35 +151,38 @@ class LangflowHistoryService:
                     # Create conversation metadata
                     first_message = messages[0] if messages else None
                     last_message = messages[-1] if messages else None
-                    
+
                     conversation = {
                         "session_id": session_id,
                         "langflow_session_id": session_id,  # For compatibility
                         "response_id": session_id,  # Map session_id to response_id for frontend compatibility
                         "messages": messages,
                         "message_count": len(messages),
-                        "created_at": first_message.get("timestamp") if first_message else None,
-                        "last_activity": last_message.get("timestamp") if last_message else None,
-                        "flow_id": first_message.get("langflow_flow_id") if first_message else None,
-                        "source": "langflow"
+                        "created_at": first_message.get("timestamp")
+                        if first_message
+                        else None,
+                        "last_activity": last_message.get("timestamp")
+                        if last_message
+                        else None,
+                        "flow_id": first_message.get("langflow_flow_id")
+                        if first_message
+                        else None,
+                        "source": "langflow",
                     }
                     conversations.append(conversation)
-            
+
             # Sort by last activity (most recent first)
             conversations.sort(key=lambda c: c.get("last_activity", ""), reverse=True)
-            
+
             return {
                 "conversations": conversations,
                 "total_conversations": len(conversations),
-                "user_id": user_id
+                "user_id": user_id,
             }
-            
+
         except Exception as e:
             logger.error(f"Error getting user conversation history: {e}")
-            return {
-                "error": str(e),
-                "conversations": []
-            }
+            return {"error": str(e), "conversations": []}
 
 
 # Global instance

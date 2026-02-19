@@ -96,7 +96,9 @@ class BaseConnector(ABC):
         pass
 
     @abstractmethod
-    async def list_files(self, page_token: Optional[str] = None, max_files: Optional[int] = None) -> Dict[str, Any]:
+    async def list_files(
+        self, page_token: Optional[str] = None, max_files: Optional[int] = None
+    ) -> Dict[str, Any]:
         """List all files. Returns files and next_page_token if any."""
         pass
 
@@ -138,7 +140,7 @@ class BaseConnector(ABC):
 
     async def _detect_base_url(self) -> Optional[str]:
         """Auto-detect base URL for the connector.
-        
+
         Default implementation returns None.
         Subclasses (OneDrive, SharePoint) should override this method.
         """

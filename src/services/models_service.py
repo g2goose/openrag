@@ -97,7 +97,9 @@ class ModelsService:
                     key=lambda x: (not x.get("default", False), x["value"])
                 )
 
-                logger.info("OpenAI API key validated successfully without consuming credits")
+                logger.info(
+                    "OpenAI API key validated successfully without consuming credits"
+                )
                 return {
                     "language_models": language_models,
                     "embedding_models": embedding_models,
@@ -112,7 +114,9 @@ class ModelsService:
             logger.error(f"Error fetching OpenAI models: {str(e)}")
             raise
 
-    async def get_anthropic_models(self, api_key: str) -> Dict[str, List[Dict[str, str]]]:
+    async def get_anthropic_models(
+        self, api_key: str
+    ) -> Dict[str, List[Dict[str, str]]]:
         """Fetch available models from Anthropic API"""
         try:
             headers = {
@@ -161,7 +165,9 @@ class ModelsService:
                     "embedding_models": [],  # Anthropic doesn't provide embedding models
                 }
             else:
-                logger.error(f"Failed to validate Anthropic API key: {response.status_code}")
+                logger.error(
+                    f"Failed to validate Anthropic API key: {response.status_code}"
+                )
                 raise Exception(
                     f"Anthropic API returned status code {response.status_code}"
                 )
@@ -345,7 +351,9 @@ class ModelsService:
                 if text_response.status_code == 200:
                     text_data = text_response.json()
                     text_models = text_data.get("resources", [])
-                    logger.info(f"Retrieved {len(text_models)} text chat models from Watson API")
+                    logger.info(
+                        f"Retrieved {len(text_models)} text chat models from Watson API"
+                    )
 
                     for i, model in enumerate(text_models):
                         model_id = model.get("model_id", "")
@@ -379,7 +387,9 @@ class ModelsService:
                 if embed_response.status_code == 200:
                     embed_data = embed_response.json()
                     embed_models = embed_data.get("resources", [])
-                    logger.info(f"Retrieved {len(embed_models)} embedding models from Watson API")
+                    logger.info(
+                        f"Retrieved {len(embed_models)} embedding models from Watson API"
+                    )
 
                     for i, model in enumerate(embed_models):
                         model_id = model.get("model_id", "")
@@ -401,9 +411,13 @@ class ModelsService:
             # Lightweight validation: API key is already validated by successfully getting bearer token
             # No need to make a generation request that consumes credits
             if bearer_token:
-                logger.info("IBM Watson API key validated successfully without consuming credits")
+                logger.info(
+                    "IBM Watson API key validated successfully without consuming credits"
+                )
             else:
-                logger.warning("No bearer token available - API key validation may have failed")
+                logger.warning(
+                    "No bearer token available - API key validation may have failed"
+                )
 
             if not language_models and not embedding_models:
                 # Provide more specific error message about missing models

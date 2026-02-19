@@ -4,6 +4,7 @@ Public API v1 Search endpoint.
 Provides semantic search functionality.
 Uses API key authentication.
 """
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from utils.logging_config import get_logger
@@ -88,13 +89,15 @@ async def search_endpoint(request: Request, search_service, session_manager):
         # Transform results to public API format
         results = []
         for item in result.get("results", []):
-            results.append({
-                "filename": item.get("filename"),
-                "text": item.get("text"),
-                "score": item.get("score"),
-                "page": item.get("page"),
-                "mimetype": item.get("mimetype"),
-            })
+            results.append(
+                {
+                    "filename": item.get("filename"),
+                    "text": item.get("text"),
+                    "score": item.get("score"),
+                    "page": item.get("page"),
+                    "mimetype": item.get("mimetype"),
+                }
+            )
 
         return JSONResponse({"results": results})
 
@@ -102,7 +105,10 @@ async def search_endpoint(request: Request, search_service, session_manager):
         error_msg = str(e)
         logger.error("Search failed", error=error_msg, user_id=user_id)
 
-        if "AuthenticationException" in error_msg or "access denied" in error_msg.lower():
+        if (
+            "AuthenticationException" in error_msg
+            or "access denied" in error_msg.lower()
+        ):
             return JSONResponse({"error": error_msg}, status_code=403)
         else:
             return JSONResponse({"error": error_msg}, status_code=500)

@@ -199,7 +199,6 @@ Then restart Cursor.
 
 ---
 
-
 ## Example prompts
 
 Once the server is configured, you can ask the AI to:

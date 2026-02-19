@@ -36,6 +36,7 @@ from .exceptions import (
     ServerError,
     ValidationError,
 )
+from .flows import FlowsClient
 from .knowledge_filters import KnowledgeFiltersClient
 from .models import (
     AgentSettings,
@@ -66,6 +67,10 @@ from .models import (
     SourcesEvent,
     StreamEvent,
     UpdateKnowledgeFilterOptions,
+    # Flow models
+    FlowListResponse,
+    FlowRunResponse,
+    FlowSummary,
 )
 
 __version__ = "0.1.0"
@@ -74,6 +79,7 @@ __all__ = [
     # Main client
     "OpenRAGClient",
     # Sub-clients
+    "FlowsClient",
     "KnowledgeFiltersClient",
     # Exceptions
     "OpenRAGError",
@@ -112,4 +118,8 @@ __all__ = [
     "KnowledgeFilterSearchResponse",
     "GetKnowledgeFilterResponse",
     "DeleteKnowledgeFilterResponse",
+    # Flow models
+    "FlowSummary",
+    "FlowListResponse",
+    "FlowRunResponse",
 ]

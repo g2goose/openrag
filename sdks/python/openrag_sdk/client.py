@@ -7,6 +7,7 @@ import httpx
 
 from .chat import ChatClient
 from .documents import DocumentsClient
+from .flows import FlowsClient
 from .exceptions import (
     AuthenticationError,
     NotFoundError,
@@ -37,9 +38,7 @@ class ModelsClient:
         """
         from .models import ModelsResponse
 
-        response = await self._client._request(
-            "GET", f"/api/v1/models/{provider}"
-        )
+        response = await self._client._request("GET", f"/api/v1/models/{provider}")
         data = response.json()
         return ModelsResponse(**data)
 
@@ -138,9 +137,7 @@ class OpenRAGClient:
 
         # Resolve base URL from argument or environment
         self._base_url = (
-            base_url
-            or os.environ.get("OPENRAG_URL")
-            or self.DEFAULT_BASE_URL
+            base_url or os.environ.get("OPENRAG_URL") or self.DEFAULT_BASE_URL
         ).rstrip("/")
 
         self._timeout = timeout
@@ -159,6 +156,7 @@ class OpenRAGClient:
         self.settings = SettingsClient(self)
         self.models = ModelsClient(self)
         self.knowledge_filters = KnowledgeFiltersClient(self)
+        self.flows = FlowsClient(self)
 
     @property
     def _headers(self) -> dict[str, str]:

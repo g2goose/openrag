@@ -22,7 +22,9 @@ class ConnectorService:
         task_service=None,
         session_manager=None,
     ):
-        self.clients = patched_async_client  # Store the clients object to access the property
+        self.clients = (
+            patched_async_client  # Store the clients object to access the property
+        )
         self.process_pool = process_pool
         self.embed_model = embed_model
         self.index_name = index_name
@@ -132,7 +134,9 @@ class ConnectorService:
                 f"{acl_result['chunks_updated']} chunks updated"
             )
         elif acl_result["status"] == "error":
-            logger.error(f"ACL update error for {document.id}: {acl_result.get('error')}")
+            logger.error(
+                f"ACL update error for {document.id}: {acl_result.get('error')}"
+            )
 
         # Update other metadata fields (source_url, timestamps, etc.)
         # Use update_by_query for efficiency
@@ -165,9 +169,9 @@ class ConnectorService:
                             if document.modified_time
                             else None,
                             "metadata": document.metadata,
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             )
             logger.debug(f"Updated metadata for document {document.id}")
         except Exception as e:
@@ -177,7 +181,6 @@ class ConnectorService:
                 error=str(e),
             )
             raise
-
 
     async def sync_connector_files(
         self,
@@ -189,7 +192,7 @@ class ConnectorService:
     ) -> str:
         """
         Sync files from a connector connection using existing task tracking system.
-        
+
         Args:
             connection_id: The connection ID
             user_id: The user ID
@@ -292,7 +295,8 @@ class ConnectorService:
         file_ids = [file_info["id"] for file_info in files_to_process]
         original_filenames = {
             file_info["id"]: clean_connector_filename(
-                file_info["name"], file_info.get("mimeType") or file_info.get("mimetype")
+                file_info["name"],
+                file_info.get("mimeType") or file_info.get("mimetype"),
             )
             for file_info in files_to_process
             if "name" in file_info
@@ -316,7 +320,7 @@ class ConnectorService:
         """
         Sync specific files by their IDs (used for webhook-triggered syncs or manual selection).
         Automatically expands folders to their contents.
-        
+
         Args:
             connection_id: The connection ID
             user_id: The user ID
@@ -349,9 +353,11 @@ class ConnectorService:
 
         # If file_infos provided, cache them in the connector for later use
         # This allows get_file_content to use download URLs directly
-        if file_infos and hasattr(connector, 'set_file_infos'):
+        if file_infos and hasattr(connector, "set_file_infos"):
             connector.set_file_infos(file_infos)
-            logger.info(f"Cached {len(file_infos)} file infos with download URLs in connector")
+            logger.info(
+                f"Cached {len(file_infos)} file infos with download URLs in connector"
+            )
 
         # Temporarily set file_ids in the connector's config so list_files() can use them
         # Store the original values to restore later

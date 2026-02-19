@@ -4,6 +4,7 @@ Public API v1 Settings endpoint.
 Provides access to configuration settings.
 Uses API key authentication.
 """
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from utils.logging_config import get_logger
@@ -87,4 +88,5 @@ async def update_settings_endpoint(request: Request, session_manager):
     Provider API keys and credentials cannot be updated via this endpoint.
     """
     from api.settings import update_settings
+
     return await update_settings(request, session_manager)

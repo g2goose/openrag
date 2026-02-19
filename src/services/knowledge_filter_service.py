@@ -28,7 +28,9 @@ class KnowledgeFilterService:
             if result.get("result") == "created":
                 # Extra safety: ensure visibility in subsequent searches
                 try:
-                    await opensearch_client.indices.refresh(index=KNOWLEDGE_FILTERS_INDEX_NAME)
+                    await opensearch_client.indices.refresh(
+                        index=KNOWLEDGE_FILTERS_INDEX_NAME
+                    )
                 except Exception:
                     pass
                 return {"success": True, "id": filter_doc["id"], "filter": filter_doc}
@@ -156,7 +158,9 @@ class KnowledgeFilterService:
                 # Get the updated document
                 # Ensure visibility before fetching/returning
                 try:
-                    await opensearch_client.indices.refresh(index=KNOWLEDGE_FILTERS_INDEX_NAME)
+                    await opensearch_client.indices.refresh(
+                        index=KNOWLEDGE_FILTERS_INDEX_NAME
+                    )
                 except Exception:
                     pass
                 updated_doc = await opensearch_client.get(
@@ -188,7 +192,9 @@ class KnowledgeFilterService:
             if result.get("result") == "deleted":
                 # Extra safety: ensure visibility in subsequent searches
                 try:
-                    await opensearch_client.indices.refresh(index=KNOWLEDGE_FILTERS_INDEX_NAME)
+                    await opensearch_client.indices.refresh(
+                        index=KNOWLEDGE_FILTERS_INDEX_NAME
+                    )
                 except Exception:
                     pass
                 return {
