@@ -21,8 +21,7 @@ wheels/
 !**/package-lock.json
 !**/tsconfig.json
 !flows/*.json
-!src/tui/_assets/flows/*.json
-!src/tui/_assets/flows/components/*.json
+!flows/components/*.json
 !frontend/*.json
 .DS_Store
 
