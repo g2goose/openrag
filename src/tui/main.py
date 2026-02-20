@@ -806,6 +806,12 @@ def setup_host_directories():
 
 def run_tui():
     """Run the OpenRAG TUI application."""
+    print("\n" + "=" * 65)
+    print("  \u26a0   The standalone OpenRAG TUI is deprecated.")
+    print("      Use the unified BT1-Forge Control Center instead:")
+    print("        uv run python main.py --tui   (from bt1zar_bt1_CLI/)")
+    print("=" * 65 + "\n")
+
     # Check for native Windows before launching TUI
     from .utils.platform import PlatformDetector
 
