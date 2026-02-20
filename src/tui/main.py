@@ -495,10 +495,18 @@ def copy_sample_documents(*, force: bool = False) -> None:
     documents_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        assets_files = files("tui._assets.openrag-documents")
-        _copy_assets(
-            assets_files, documents_dir, allowed_suffixes=(".pdf",), force=force
-        )
+        import pathlib as _pathlib
+        _REPO_DOCS = _pathlib.Path(__file__).parent.parent.parent.parent / "documents"
+        if _REPO_DOCS.is_dir():
+            _copy_assets(
+                _REPO_DOCS, documents_dir, allowed_suffixes=(".pdf",), force=force
+            )
+        else:
+            # Fallback: bundled assets (legacy path, kept for installed-package mode)
+            assets_files = files("tui._assets.openrag-documents")
+            _copy_assets(
+                assets_files, documents_dir, allowed_suffixes=(".pdf",), force=force
+            )
     except Exception as e:
         logger.debug(f"Could not copy sample documents: {e}")
         # This is not a critical error - the app can work without sample documents
@@ -516,8 +524,14 @@ def copy_sample_flows(*, force: bool = False) -> None:
     flows_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        assets_files = files("tui._assets.flows")
-        _copy_assets(assets_files, flows_dir, allowed_suffixes=(".json",), force=force)
+        import pathlib as _pathlib
+        _REPO_FLOWS = _pathlib.Path(__file__).parent.parent.parent.parent / "flows"
+        if _REPO_FLOWS.is_dir():
+            _copy_assets(_REPO_FLOWS, flows_dir, allowed_suffixes=(".json",), force=force)
+        else:
+            # Fallback: bundled assets (legacy path, kept for installed-package mode)
+            assets_files = files("tui._assets.flows")
+            _copy_assets(assets_files, flows_dir, allowed_suffixes=(".json",), force=force)
     except Exception as e:
         logger.debug(f"Could not copy sample flows: {e}")
         # The app can proceed without bundled flows
