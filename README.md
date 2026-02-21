@@ -27,6 +27,18 @@ To get started with OpenRAG, see the installation guides in the OpenRAG document
 
 For developers who want to [contribute to OpenRAG](https://docs.openr.ag/support/contribute) or set up a development environment, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## BT1-Forge Integration
+
+OpenRAG integrates with the BT1-Forge platform as its RAG backend:
+
+```bash
+# From bt1-forge-orch/ root
+uv run bt1 start rag           # Start OpenRAG containers
+uv run bt1 start ipc --rag     # IPC server with RAGManagedAgent
+```
+
+Requires `OPENRAG_API_KEY` environment variable. See `bt1zar_bt1-forge/forge-docs/` for full documentation.
+
 ## Troubleshooting
 
 For assistance with OpenRAG, see [Troubleshoot OpenRAG](https://docs.openr.ag/support/troubleshoot) and visit the [Discussions page](https://github.com/langflow-ai/openrag/discussions).
